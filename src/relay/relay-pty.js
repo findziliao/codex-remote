@@ -165,9 +165,9 @@ function stripReply(text = '') {
 }
 
 // 处理邮件消息
-async function handleMailMessage(source, uid) {
+async function handleMailMessage(source, uid, parsedEmail = null) {
     try {
-        const parsed = await simpleParser(source);
+        const parsed = parsedEmail || await simpleParser(source);
         
         // 检查是否已处理过
         const messageId = parsed.messageId;
@@ -365,45 +365,132 @@ async function startImap() {
                 log.info(`Found ${messages.length} unread messages`);
                 
                 for (const uid of messages) {
-                    const { source } = await client.download(uid, '1', { uid: true });
-                    const chunks = [];
-                    for await (const chunk of source) {
-                        chunks.push(chunk);
-                    }
-                    await handleMailMessage(Buffer.concat(chunks), uid);
-                    
-                    // 标记为已读
-                    await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
-                }
-            }
-            
-            // 监听新邮件
-            log.info('Starting IMAP monitor...');
-            
-            for await (const msg of client.idle()) {
-                if (msg.path === 'INBOX' && msg.type === 'exists') {
-                    log.debug({ count: msg.count }, 'New message notification');
-                    
-                    // 获取最新的邮件
-                    const messages = await client.search({ seen: false });
-                    for (const uid of messages) {
-                        const { source } = await client.download(uid, '1', { uid: true });
-                        const chunks = [];
-                        for await (const chunk of source) {
-                            chunks.push(chunk);
+                    try {
+                        log.debug({ uid }, 'Downloading message');
+                        const message = await client.fetchOne(uid, { 
+                            bodyText: true,
+                            bodyStructure: true,
+                            envelope: true 
+                        }, { uid: true });
+                        
+                        if (!message) {
+                            log.warn({ uid }, 'Could not fetch message');
+                            continue;
                         }
-                        await handleMailMessage(Buffer.concat(chunks), uid);
+                        
+                        // 使用简单的方式获取邮件内容
+                        const emailText = message.bodyText?.value || '';
+                        const envelope = message.envelope;
+                        
+                        // 构造简单的邮件对象用于解析
+                        const simpleEmail = {
+                            from: envelope.from?.[0] ? {
+                                text: `${envelope.from[0].name || ''} <${envelope.from[0].address}>`,
+                                value: envelope.from
+                            } : null,
+                            subject: envelope.subject,
+                            text: emailText,
+                            date: envelope.date,
+                            messageId: envelope.messageId,
+                            headers: new Map()
+                        };
+                        
+                        await handleMailMessage(null, uid, simpleEmail);
                         
                         // 标记为已读
                         await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
+                    } catch (downloadError) {
+                        log.error({ 
+                            uid,
+                            error: downloadError.message,
+                            code: downloadError.code
+                        }, 'Failed to download message');
                     }
                 }
             }
+            
+            // 使用定期检查替代IDLE监听（更稳定）
+            log.info('Starting periodic email check...');
+            
+            setInterval(async () => {
+                try {
+                    const newMessages = await client.search({ seen: false });
+                    if (newMessages.length > 0) {
+                        log.debug({ count: newMessages.length }, 'Found new messages');
+                        
+                        for (const uid of newMessages) {
+                            // 检查是否已处理过这个UID
+                            if (PROCESSED_MESSAGES.has(`uid_${uid}`)) {
+                                continue;
+                            }
+                            
+                            try {
+                                log.debug({ uid }, 'Processing new message');
+                                const message = await client.fetchOne(uid, { 
+                                    bodyText: true,
+                                    bodyStructure: true,
+                                    envelope: true 
+                                }, { uid: true });
+                                
+                                if (!message) {
+                                    log.warn({ uid }, 'Could not fetch new message');
+                                    continue;
+                                }
+                                
+                                // 使用简单的方式获取邮件内容
+                                const emailText = message.bodyText?.value || '';
+                                const envelope = message.envelope;
+                                
+                                // 构造简单的邮件对象用于解析
+                                const simpleEmail = {
+                                    from: envelope.from?.[0] ? {
+                                        text: `${envelope.from[0].name || ''} <${envelope.from[0].address}>`,
+                                        value: envelope.from
+                                    } : null,
+                                    subject: envelope.subject,
+                                    text: emailText,
+                                    date: envelope.date,
+                                    messageId: envelope.messageId,
+                                    headers: new Map()
+                                };
+                                
+                                await handleMailMessage(null, uid, simpleEmail);
+                                
+                                // 标记为已处理
+                                PROCESSED_MESSAGES.add(`uid_${uid}`);
+                                
+                                // 标记为已读
+                                await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
+                            } catch (processError) {
+                                log.error({ 
+                                    uid,
+                                    error: processError.message,
+                                    code: processError.code
+                                }, 'Failed to process new message');
+                            }
+                        }
+                    }
+                } catch (checkError) {
+                    log.error({ error: checkError.message }, 'Error during periodic check');
+                }
+            }, 10000); // 每10秒检查一次
+            
+            // 保持连接活跃
+            log.info('Email monitoring active, checking every 10 seconds...');
+            
+            // 无限等待（保持进程运行）
+            await new Promise(resolve => {
+                // 进程会一直运行直到被终止
+            });
         } finally {
             lock.release();
         }
     } catch (error) {
-        log.error({ error }, 'IMAP error');
+        log.error({ 
+            error: error.message,
+            code: error.code,
+            stack: error.stack 
+        }, 'IMAP error');
         throw error;
     } finally {
         await client.logout();

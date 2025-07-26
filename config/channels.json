@@ -18,12 +18,12 @@
         }
       },
       "imap": {
-        "host": "imap.gmail.com",
+        "host": "imap.feishu.cn",
         "port": 993,
         "secure": true,
         "auth": {
-          "user": "jiaxicui446@gmail.com",
-          "pass": "your-gmail-app-password"
+          "user": "noreply@pandalla.ai",
+          "pass": "kKgS3tNReRTL3RQC"
         }
       },
       "from": "TaskPing 通知系统 <noreply@pandalla.ai>",
