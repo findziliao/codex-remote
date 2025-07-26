@@ -18,7 +18,8 @@
     "relay:test": "node test-email-reply.js",
     "relay:start": "INJECTION_MODE=pty node src/relay/relay-pty.js",
     "email:config": "node update-email-config.js",
-    "email:test": "node test-email-send.js"
+    "email:test": "node test-email-send.js",
+    "gmail:setup": "node setup-gmail-app-password.js"
   },
   "bin": {
     "taskping-install": "./install.js",

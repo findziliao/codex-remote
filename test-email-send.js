@@ -75,11 +75,11 @@ async function testEmailSend() {
                 </div>
                 
                 <div style="background: #e8f4f8; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                    <p><strong>📝 测试指令：</strong></p>
-                    <p>请回复以下任意命令来测试：</p>
+                    <p><strong>📝 如何回复测试指令：</strong></p>
+                    <p><strong>方式1（推荐）</strong>：直接回复此邮件，内容输入：</p>
                     <ul>
-                        <li>直接回复: <code>echo "Hello from email"</code></li>
-                        <li>使用CMD前缀: <code>CMD: pwd</code></li>
+                        <li><code>echo "Hello from email"</code></li>
+                        <li><code>CMD: pwd</code></li>
                         <li>使用代码块:
                             <pre style="background: white; padding: 10px; border-radius: 3px;">
 \`\`\`
@@ -88,6 +88,19 @@ ls -la
                             </pre>
                         </li>
                     </ul>
+                    <p><strong>方式2</strong>：从任何邮箱发送邮件到 <strong style="color: #007bff;">noreply@pandalla.ai</strong></p>
+                    <p>主题必须包含：<code>[TaskPing #${testToken}]</code></p>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                    <p><strong>💡 多邮箱支持：</strong></p>
+                    <p>您可以从以下任意邮箱发送回复到 <strong>noreply@pandalla.ai</strong>：</p>
+                    <ul>
+                        <li>Gmail、QQ邮箱、163邮箱</li>
+                        <li>Outlook、企业邮箱</li>
+                        <li>任何支持SMTP的邮箱</li>
+                    </ul>
+                    <p><strong>回复路径</strong>：您的邮箱 → noreply@pandalla.ai → TaskPing系统处理</p>
                 </div>
                 
                 <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
@@ -95,7 +108,9 @@ ls -la
                 <p style="color: #666; font-size: 12px;">
                     会话ID: ${testToken}<br>
                     发送自: ${process.env.SMTP_USER}<br>
-                    发送到: ${process.env.EMAIL_TO || 'jiaxicui446@gmail.com'}
+                    通知邮箱: ${process.env.EMAIL_TO}<br>
+                    回复邮箱: ${process.env.SMTP_USER}<br>
+                    系统支持任意邮箱回复
                 </p>
             </div>
         `,
