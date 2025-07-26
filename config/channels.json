@@ -1,0 +1,69 @@
+{
+  "desktop": {
+    "type": "local",
+    "enabled": true,
+    "config": {}
+  },
+  "email": {
+    "type": "email",
+    "enabled": true,
+    "config": {
+      "smtp": {
+        "host": "smtp.feishu.cn",
+        "port": 465,
+        "secure": true,
+        "auth": {
+          "user": "panda@pandalla.ai",
+          "pass": "1fIvPAo0lagVG9gS"
+        }
+      },
+      "imap": {
+        "host": "imap.feishu.cn",
+        "port": 993,
+        "secure": true,
+        "auth": {
+          "user": "panda@pandalla.ai",
+          "pass": "1fIvPAo0lagVG9gS"
+        }
+      },
+      "from": "TaskPing <panda@pandalla.ai>",
+      "to": "jiaxicui446@gmail.com",
+      "template": {
+        "checkInterval": 30
+      }
+    }
+  },
+  "discord": {
+    "type": "chat",
+    "enabled": false,
+    "config": {
+      "webhook": "",
+      "username": "TaskPing",
+      "avatar": null
+    }
+  },
+  "telegram": {
+    "type": "chat",
+    "enabled": false,
+    "config": {
+      "token": "",
+      "chatId": ""
+    }
+  },
+  "whatsapp": {
+    "type": "chat",
+    "enabled": false,
+    "config": {
+      "webhook": "",
+      "apiKey": ""
+    }
+  },
+  "feishu": {
+    "type": "chat",
+    "enabled": false,
+    "config": {
+      "webhook": "",
+      "secret": ""
+    }
+  }
+}

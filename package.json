@@ -1,0 +1,70 @@
+{
+  "name": "taskping",
+  "version": "1.0.0",
+  "description": "Claude Code智能任务通知系统 - 当Claude完成任务或需要输入时发送桌面通知",
+  "main": "hook-notify.js",
+  "scripts": {
+    "install": "node install.js",
+    "config": "node taskping-config.js",
+    "test": "node config-tool.js --test",
+    "test-completed": "node hook-notify.js --type completed",
+    "test-waiting": "node hook-notify.js --type waiting",
+    "daemon:start": "node taskping.js daemon start",
+    "daemon:stop": "node taskping.js daemon stop", 
+    "daemon:status": "node taskping.js daemon status",
+    "test:clipboard": "node test-clipboard.js",
+    "start": "node email-automation.js"
+  },
+  "bin": {
+    "taskping-install": "./install.js",
+    "taskping-config": "./config-tool.js",
+    "taskping-notify": "./hook-notify.js"
+  },
+  "keywords": [
+    "claude-code",
+    "notification",
+    "desktop-notification",
+    "hooks",
+    "productivity",
+    "development-tools",
+    "task-management",
+    "claude",
+    "ai-assistant"
+  ],
+  "author": "TaskPing Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TaskPing/TaskPing.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TaskPing/TaskPing/issues"
+  },
+  "homepage": "https://github.com/TaskPing/TaskPing#readme",
+  "dependencies": {
+    "mailparser": "^3.7.4",
+    "node-imap": "^0.9.6",
+    "nodemailer": "^7.0.5",
+    "uuid": "^11.1.0"
+  },
+  "files": [
+    "hook-notify.js",
+    "config-tool.js",
+    "install.js",
+    "config.json",
+    "i18n.json",
+    "claude-hooks.json",
+    "sounds/",
+    "README.md",
+    "QUICKSTART.md",
+    "LICENSE"
+  ]
+}
