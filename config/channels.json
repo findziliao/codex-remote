@@ -13,20 +13,20 @@
         "port": 465,
         "secure": true,
         "auth": {
-          "user": "panda@pandalla.ai",
-          "pass": "1fIvPAo0lagVG9gS"
+          "user": "noreply@pandalla.ai",
+          "pass": "kKgS3tNReRTL3RQC"
         }
       },
       "imap": {
-        "host": "imap.feishu.cn",
+        "host": "imap.gmail.com",
         "port": 993,
         "secure": true,
         "auth": {
-          "user": "panda@pandalla.ai",
-          "pass": "1fIvPAo0lagVG9gS"
+          "user": "jiaxicui446@gmail.com",
+          "pass": "your-gmail-app-password"
         }
       },
-      "from": "TaskPing <panda@pandalla.ai>",
+      "from": "TaskPing 通知系统 <noreply@pandalla.ai>",
       "to": "jiaxicui446@gmail.com",
       "template": {
         "checkInterval": 30

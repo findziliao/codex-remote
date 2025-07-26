@@ -16,7 +16,9 @@
     "start": "node email-automation.js",
     "relay:pty": "node start-relay-pty.js",
     "relay:test": "node test-email-reply.js",
-    "relay:start": "INJECTION_MODE=pty node src/relay/relay-pty.js"
+    "relay:start": "INJECTION_MODE=pty node src/relay/relay-pty.js",
+    "email:config": "node update-email-config.js",
+    "email:test": "node test-email-send.js"
   },
   "bin": {
     "taskping-install": "./install.js",
