@@ -10,10 +10,13 @@
     "test-completed": "node hook-notify.js --type completed",
     "test-waiting": "node hook-notify.js --type waiting",
     "daemon:start": "node taskping.js daemon start",
-    "daemon:stop": "node taskping.js daemon stop", 
+    "daemon:stop": "node taskping.js daemon stop",
     "daemon:status": "node taskping.js daemon status",
     "test:clipboard": "node test-clipboard.js",
-    "start": "node email-automation.js"
+    "start": "node email-automation.js",
+    "relay:pty": "node start-relay-pty.js",
+    "relay:test": "node test-email-reply.js",
+    "relay:start": "INJECTION_MODE=pty node src/relay/relay-pty.js"
   },
   "bin": {
     "taskping-install": "./install.js",
@@ -50,9 +53,15 @@
   },
   "homepage": "https://github.com/TaskPing/TaskPing#readme",
   "dependencies": {
+    "dotenv": "^17.2.1",
+    "execa": "^9.6.0",
+    "imapflow": "^1.0.191",
     "mailparser": "^3.7.4",
     "node-imap": "^0.9.6",
+    "node-pty": "^1.0.0",
     "nodemailer": "^7.0.5",
+    "pino": "^9.7.0",
+    "pino-pretty": "^13.0.0",
     "uuid": "^11.1.0"
   },
   "files": [
