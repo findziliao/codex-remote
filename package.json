@@ -4,27 +4,12 @@
   "description": "Claude Code Smart Notification System - Send desktop notifications when Claude completes tasks or needs input",
   "main": "hook-notify.js",
   "scripts": {
-    "install": "node install.js",
     "config": "node taskping-config.js",
-    "test": "node config-tool.js --test",
-    "test-completed": "node hook-notify.js --type completed",
-    "test-waiting": "node hook-notify.js --type waiting",
     "daemon:start": "node taskping.js daemon start",
     "daemon:stop": "node taskping.js daemon stop",
     "daemon:status": "node taskping.js daemon status",
-    "test:clipboard": "node test-clipboard.js",
-    "start": "node email-automation.js",
     "relay:pty": "node start-relay-pty.js",
-    "relay:test": "node test-email-reply.js",
-    "relay:start": "INJECTION_MODE=pty node src/relay/relay-pty.js",
-    "email:config": "node update-email-config.js",
-    "email:test": "node test-email-send.js",
-    "gmail:setup": "node setup-gmail-app-password.js"
-  },
-  "bin": {
-    "taskping-install": "./install.js",
-    "taskping-config": "./config-tool.js",
-    "taskping-notify": "./hook-notify.js"
+    "relay:start": "INJECTION_MODE=pty node src/relay/relay-pty.js"
   },
   "keywords": [
     "claude-code",

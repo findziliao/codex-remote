@@ -148,30 +148,35 @@ function cleanEmailText(text = '') {
     // Find actual command content (skip greetings, etc.)
     const contentLines = cleanText.split(/\r?\n/).filter(l => l.trim().length > 0);
     
-    // Find command line (usually contains the actual command)
+    // Collect all valid command lines (support multi-line commands)
+    const validCommandLines = [];
+    
     for (const line of contentLines) {
         const trimmedLine = line.trim();
-        // Skip common greetings
-        if (trimmedLine.match(/^(hi|hello|thank you|thanks|ok|yes)/i)) {
+        
+        // Skip common greetings (but only if they're standalone)
+        if (trimmedLine.match(/^(hi|hello|thank you|thanks|ok|yes)$/i)) {
             continue;
         }
-        // Skip pure Chinese greetings
-        if (trimmedLine.match(/^(this is|please|help me|hello)/)) {
-            continue;
-        }
+        
         // Skip remaining email quotes
         if (trimmedLine.includes('TaskPing Notification System') ||
             trimmedLine.includes('<noreply@pandalla.ai>') ||
             trimmedLine.includes('on 2025')) {
             continue;
         }
-        // If a suspected command line is found, check and deduplicate
-        if (trimmedLine.length > 3) {
-            const command = trimmedLine.slice(0, 8192);
-            // Check if command is duplicated (e.g., "drink cola okay drink cola okay")
-            const deduplicatedCommand = deduplicateCommand(command);
-            return deduplicatedCommand;
+        
+        // Collect valid command lines
+        if (trimmedLine.length > 0) {
+            validCommandLines.push(trimmedLine);
         }
+    }
+    
+    // Join all valid lines to form the complete command
+    if (validCommandLines.length > 0) {
+        const fullCommand = validCommandLines.join('\n').slice(0, 8192);
+        const deduplicatedCommand = deduplicateCommand(fullCommand);
+        return deduplicatedCommand;
     }
     
     // If no obvious command is found, return first non-empty line (and deduplicate)

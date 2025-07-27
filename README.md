@@ -19,29 +19,83 @@ TaskPing is an intelligent email automation tool that deeply integrates Claude C
 - **State Management**: Comprehensive session state tracking and error recovery mechanisms
 - **Security Verification**: Email source verification, ensures only authorized user replies are processed
 
-## 📦 Quick Installation
+## 📦 Installation and Setup
 
-### 1. Clone Project
+### 1. Clone and Install
 ```bash
 git clone https://github.com/JessyTsui/TaskPing.git
 cd TaskPing
 npm install
 ```
 
-### 2. Configure Email
+### 2. Test Basic Functionality
 ```bash
-npm run config
-```
-Follow prompts to configure your email information (SMTP and IMAP).
+# Test the main program
+node taskping.js --help
 
-### 3. Configure Claude Code Hooks
-Add the following content to the `hooks` section of `~/.claude/settings.json`:
+# Check system status  
+node taskping.js status
+
+# Test notifications (desktop only, no email config needed)
+node taskping.js test
+```
+
+### 3. Configure Email (Required for Remote Control)
+
+#### 📧 Email Configuration (.env file)
+Create and edit the `.env` file in project root:
+
+```bash
+# Copy example configuration
+cp .env.example .env
+
+# Edit with your settings
+nano .env
+```
+
+**Required .env Configuration:**
+```env
+# ===== SMTP (发送邮件) =====
+SMTP_HOST=smtp.your-domain.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your-email@domain.com
+SMTP_PASS=your-app-password
+
+# ===== IMAP (接收邮件) =====  
+IMAP_HOST=imap.your-domain.com
+IMAP_PORT=993
+IMAP_SECURE=true
+IMAP_USER=your-email@domain.com
+IMAP_PASS=your-app-password
+
+# ===== 邮件路由 =====
+EMAIL_TO=your-notification-email@gmail.com    # 接收通知的邮箱
+ALLOWED_SENDERS=your-notification-email@gmail.com  # 允许发送命令的邮箱
+```
+
+**🔑 Common Email Providers:**
+- **Gmail**: `smtp.gmail.com:587`, `imap.gmail.com:993` (需要应用密码)
+- **Outlook**: `smtp-mail.outlook.com:587`, `outlook.office365.com:993`
+- **飞书**: `smtp.feishu.cn:465`, `imap.feishu.cn:993`
+
+### 4. Install Global Commands (Optional but Recommended)
+```bash
+# Install claude-control global command
+node install-global.js
+
+# Verify installation
+claude-control --help
+```
+
+### 5. Configure Claude Code Hooks (Required for Auto-Notifications)
+Add to `~/.claude/settings.json`:
 
 ```json
 {
   "hooks": {
     "Stop": [{
-      "matcher": "*",
+      "matcher": "*", 
       "hooks": [{
         "type": "command",
         "command": "node /path/to/TaskPing/taskping.js notify --type completed",
@@ -51,7 +105,7 @@ Add the following content to the `hooks` section of `~/.claude/settings.json`:
     "SubagentStop": [{
       "matcher": "*",
       "hooks": [{
-        "type": "command",
+        "type": "command", 
         "command": "node /path/to/TaskPing/taskping.js notify --type waiting",
         "timeout": 5
       }]
@@ -60,43 +114,235 @@ Add the following content to the `hooks` section of `~/.claude/settings.json`:
 }
 ```
 
-### 4. Install Global claude-control Command
+Replace `/path/to/TaskPing` with your actual project path.
+
+## ⚡ Quick Start (New Users)
+
+**Just cloned? Try this 5-minute setup:**
+
 ```bash
-node install-global.js
+# 1. Install dependencies
+npm install
+
+# 2. Test basic functionality (desktop notifications)
+node taskping.js --help
+node taskping.js status
+node taskping.js test
 ```
 
-### 5. Start Email Monitoring Service
+**Result**: ✅ Desktop notifications work immediately!
+
+### 🔄 Want Email + Remote Control? Continue:
+
 ```bash
+# 3. Create email configuration
+cp .env.example .env
+# Edit .env with your email settings (see configuration section below)
+
+# 4. Configure Claude Code hooks
+# Edit ~/.claude/settings.json (see configuration section below)
+
+# 5. Start email monitoring service
 npm run relay:pty
 ```
 
-## 🎮 Usage
+**Result**: ✅ Full remote email control enabled!
 
-### 1. Create Claude Code Session
+## 🚀 How to Run After Clone
+
+### 🎯 Three Main Running Modes
+
+#### 🔔 Mode 1: Desktop Notification Only (Simplest)
+**Use Case**: Just want desktop notifications when Claude completes tasks
+
 ```bash
-# Can run from any directory
-claude-control --session project-name
+# 1. Basic setup
+npm install
+node taskping.js test
+
+# 2. Configure Claude hooks (see step 5 above)  
+# 3. Use Claude Code normally
+```
+**Result**: ✅ Desktop notifications ❌ Email features
+
+#### 📧 Mode 2: Desktop + Email Notifications  
+**Use Case**: Want both desktop and email notifications, no remote control
+
+```bash
+# 1. Basic setup + email configuration
+npm install
+# Configure .env file
+
+# 2. Test email functionality
+node taskping.js test
+
+# 3. Configure Claude hooks and use normally
+```
+**Result**: ✅ Desktop notifications ✅ Email notifications ❌ Remote control
+
+#### 🚀 Mode 3: Full Remote Control System (Complete Solution)
+**Use Case**: Complete remote control via email replies
+
+```bash
+# 1. Complete setup (all configuration steps above)
+
+# 2. Start email monitoring service
+npm run relay:pty
+
+# 3. Use Claude Code normally
+# 4. Reply to emails to control remotely
+```
+**Result**: ✅ Desktop notifications ✅ Email notifications ✅ Remote email control
+
+### 🎮 Complete Usage Workflow
+
+#### 🔧 Initial Setup (One-time)
+```bash
+# 1. Clone and install
+git clone https://github.com/JessyTsui/TaskPing.git
+cd TaskPing
+npm install
+
+# 2. Configure email (for remote control)
+cp .env.example .env
+nano .env  # Edit with your email settings
+
+# 3. Configure Claude Code hooks
+nano ~/.claude/settings.json
 ```
 
-### 2. Use Claude Code Normally
-Have normal conversations with Claude in tmux session:
+**Add to `~/.claude/settings.json`:**
+```json
+{
+  "hooks": {
+    "Stop": [{
+      "matcher": "*",
+      "hooks": [{
+        "type": "command",
+        "command": "node /your/path/to/TaskPing/taskping.js notify --type completed",
+        "timeout": 5
+      }]
+    }],
+    "SubagentStop": [{
+      "matcher": "*",
+      "hooks": [{
+        "type": "command",
+        "command": "node /your/path/to/TaskPing/taskping.js notify --type waiting",
+        "timeout": 5
+      }]
+    }]
+  }
+}
 ```
-> Please help me analyze the code structure of this project
 
-Claude responds...
+#### 🚀 Daily Usage
+
+**Step 1: Start Email Monitoring (Remote Control Mode)**
+```bash
+# Start email monitoring service (keeps running)
+npm run relay:pty
 ```
 
-### 3. Automatic Email Notifications
-When Claude completes tasks, you'll receive email notifications containing complete conversation content.
+**Step 2: Use Claude Code Normally**
+```bash
+# In a new terminal, start Claude Code
+tmux new-session -d -s my-project
+tmux attach -t my-project
+claude
 
-### 4. Email Reply Control
-Directly reply to emails with your next instruction:
-```
-Please continue optimizing code performance
+# Or simply
+claude
 ```
 
-### 5. Automatic Execution
-Your reply will be automatically injected into the corresponding Claude Code session and executed.
+**Step 3: Work and Control Remotely**
+1. 💬 **Use Claude normally**: Ask questions, give tasks
+2. 📧 **Get notifications**: When Claude completes tasks, receive email
+3. 📨 **Reply to control**: Reply to notification emails with new commands
+4. 🔄 **Auto execution**: Your email replies automatically execute in Claude
+
+#### 📧 Email Control Examples
+
+**Received notification email:**
+```
+Subject: TaskPing 任务完成通知 [#ABC123]
+
+Claude has completed your task:
+"Please analyze the project structure"
+
+Reply to this email to send new commands.
+Token: ABC123
+```
+
+**Send commands by replying:**
+```
+Please continue with the performance analysis
+```
+
+**Or use explicit command format:**
+```
+CMD: help me optimize the database queries
+```
+
+**Or code blocks:**
+```
+please run:
+```
+npm test
+```
+```
+
+#### 🎯 Advanced Usage Patterns
+
+**Pattern 1: Long-running Projects**
+```bash
+# Start persistent session
+tmux new-session -d -s project-alpha
+tmux attach -t project-alpha
+
+# Start TaskPing monitoring
+npm run relay:pty  # In background terminal
+
+# Work remotely via email all day
+```
+
+**Pattern 2: Multiple Projects**
+```bash
+# Project A
+tmux new-session -d -s project-a
+# Project B  
+tmux new-session -d -s project-b
+
+# Each session gets unique email tokens
+# Control different projects via email
+```
+
+### 🔧 Service Management Commands
+
+```bash
+# Email Monitoring Service
+npm run relay:pty              # Start email monitoring (foreground)
+# Use Ctrl+C to stop
+
+# System Status
+node taskping.js status        # View overall system status
+node taskping.js test          # Test all notification channels
+
+# Command Queue Management  
+node taskping.js commands list    # View pending email commands
+node taskping.js commands status  # Check command processing status
+node taskping.js commands clear   # Clear command queue
+
+# Configuration
+node taskping.js config        # Interactive configuration wizard
+```
+
+### 📊 How It Works
+
+1. **🔗 Integration**: Claude Code hooks automatically trigger TaskPing
+2. **📧 Notification**: Email sent when Claude completes tasks (includes session token)
+3. **📨 Reply Processing**: Your email replies are parsed for commands  
+4. **🔄 Auto Injection**: Commands automatically injected into the correct Claude session
+5. **🛡️ Security**: Only whitelisted email addresses can send commands
 
 ## 🔧 Project Architecture
 
@@ -141,43 +387,124 @@ TaskPing/
 
 ## 🔍 Troubleshooting
 
-### Email Duplicate Processing Issue
-Ensure only one email monitoring process is running:
+### ❓ Common Issues & Solutions
+
+#### 🔧 Setup Problems
+
+**"npm install" fails:**
 ```bash
-# Check running status
-ps aux | grep relay-pty
+# Check Node.js version (requires 14+)
+node -v
 
-# Stop all processes
+# Fix package.json issues
+npm install
+
+# If still failing, try
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**"Module not found" errors:**
+```bash
+# Make sure you're in the right directory
+pwd
+ls package.json taskping.js  # Should exist
+
+# Reinstall dependencies
+npm install
+```
+
+#### 📧 Email Issues
+
+**Test email configuration:**
+```bash
+# Check configuration status
+node taskping.js status
+
+# Test email sending  
+node taskping.js test
+
+# Check .env file
+cat .env
+```
+
+**Email not working:**
+```bash
+# Common fixes:
+# 1. Check SMTP/IMAP settings in .env
+# 2. Verify email passwords (use app passwords for Gmail)
+# 3. Check firewall/network connectivity
+# 4. Ensure ports are correct (465/587 for SMTP, 993 for IMAP)
+```
+
+#### 🔄 Remote Control Issues
+
+**Email monitoring not starting:**
+```bash
+# Start monitoring service
+npm run relay:pty
+
+# If fails, check:
+cat .env  # Verify email configuration
+ps aux | grep relay  # Check for conflicts
+```
+
+**Commands not executing:**
+```bash
+# Check Claude session exists
+tmux list-sessions
+
+# Verify command queue
+node taskping.js commands list
+
+# Check allowed senders in .env
+grep ALLOWED_SENDERS .env
+```
+
+**Claude hooks not triggering:**
+```bash
+# Verify hooks configuration
+cat ~/.claude/settings.json
+
+# Test hook manually
+node taskping.js notify --type completed
+
+# Check file paths in hooks configuration
+```
+
+#### 🐛 System Issues
+
+**Multiple processes running:**
+```bash
+# Check running processes
+ps aux | grep -E "(relay-pty|taskping)"
+
+# Stop all TaskPing processes
 pkill -f relay-pty
+pkill -f taskping
 
-# Restart
+# Restart clean
 npm run relay:pty
 ```
 
-### Command Injection Failure
-Check tmux session status:
+**Desktop notifications not working (macOS):**
 ```bash
-# View all sessions
-tmux list-sessions
+# Test notifications
+node taskping.js test
 
-# Check session content
-tmux capture-pane -t session-name -p
+# Check macOS notification permissions:
+# System Preferences > Notifications & Focus > Terminal
 ```
 
-### Email Configuration Issues
-Test email connection:
+**Session management issues:**
 ```bash
-# Test SMTP
-node -e "
-const config = require('./config/user.json');
-console.log('SMTP Config:', config.email.config.smtp);
-"
+# Clean session data
+rm src/data/session-map.json
 
-# Test IMAP
-node -e "
-const config = require('./config/user.json');
-console.log('IMAP Config:', config.email.config.imap);
-"
+# Restart email monitoring
+npm run relay:pty
+
+# Check session creation logs
 ```
 
 ## 🎯 Use Cases
