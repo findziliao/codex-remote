@@ -46,29 +46,29 @@ class ConfigurationManager {
     }
 
     displayCurrentConfig() {
-        console.log('\n当前配置:');
-        console.log('├─ 语言:', this.config.get('language'));
-        console.log('├─ 启用状态:', this.config.get('enabled') ? '启用' : '禁用');
-        console.log('├─ 超时时间:', this.config.get('timeout') + '秒');
-        console.log('├─ 完成提示音:', this.config.get('sound.completed'));
-        console.log('└─ 等待提示音:', this.config.get('sound.waiting'));
+        console.log('\nCurrent configuration:');
+        console.log('├─ Language:', this.config.get('language'));
+        console.log('├─ Enabled status:', this.config.get('enabled') ? 'Enabled' : 'Disabled');
+        console.log('├─ Timeout:', this.config.get('timeout') + ' seconds');
+        console.log('├─ Completion sound:', this.config.get('sound.completed'));
+        console.log('└─ Waiting sound:', this.config.get('sound.waiting'));
         console.log();
     }
 
     async showMainMenu() {
         while (true) {
-            console.log('\n=== TaskPing 配置管理器 ===');
+            console.log('\n=== TaskPing Configuration Manager ===');
             this.displayCurrentConfig();
-            console.log('选项:');
-            console.log('1. 基础设置');
-            console.log('2. 音效配置');
-            console.log('3. 通知渠道');
-            console.log('4. 命令中继');
-            console.log('5. 测试通知');
-            console.log('6. 保存并退出');
-            console.log('7. 退出(不保存)');
+            console.log('Options:');
+            console.log('1. Basic Settings');
+            console.log('2. Sound Configuration');
+            console.log('3. Notification Channels');
+            console.log('4. Command Relay');
+            console.log('5. Test Notifications');
+            console.log('6. Save and Exit');
+            console.log('7. Exit (without saving)');
 
-            const choice = await this.question('\n请选择 (1-7): ');
+            const choice = await this.question('\nPlease select (1-7): ');
 
             switch (choice) {
                 case '1':
@@ -88,32 +88,32 @@ class ConfigurationManager {
                     break;
                 case '6':
                     if (this.config.save()) {
-                        console.log('✅ 配置已保存');
+                        console.log('✅ Configuration saved');
                         this.rl.close();
                         return;
                     } else {
-                        console.log('❌ 保存失败');
+                        console.log('❌ Save failed');
                     }
                     break;
                 case '7':
-                    console.log('退出(未保存更改)');
+                    console.log('Exit (changes not saved)');
                     this.rl.close();
                     return;
                 default:
-                    console.log('❌ 无效选择');
+                    console.log('❌ Invalid selection');
             }
         }
     }
 
     async configureBasicSettings() {
-        console.log('\n=== 基础设置 ===');
-        console.log('1. 配置语言');
-        console.log('2. 切换启用状态');
-        console.log('3. 配置超时时间');
-        console.log('4. 自定义消息');
-        console.log('0. 返回主菜单');
+        console.log('\n=== Basic Settings ===');
+        console.log('1. Configure Language');
+        console.log('2. Toggle Enabled Status');
+        console.log('3. Configure Timeout');
+        console.log('4. Custom Messages');
+        console.log('0. Return to Main Menu');
 
-        const choice = await this.question('\n请选择 (0-4): ');
+        const choice = await this.question('\n Please select (0-4): ');
 
         switch (choice) {
             case '1':
@@ -131,42 +131,42 @@ class ConfigurationManager {
             case '0':
                 return;
             default:
-                console.log('❌ 无效选择');
+                console.log('❌ Invalid selection');
         }
     }
 
     async configureLanguage() {
         const languages = ['zh-CN', 'en', 'ja'];
-        console.log('\n可用语言:');
+        console.log('\nAvailable languages:');
         languages.forEach((lang, index) => {
             console.log(`${index + 1}. ${lang}`);
         });
 
-        const choice = await this.question(`选择语言 (1-${languages.length}): `);
+        const choice = await this.question(`Select language (1-${languages.length}): `);
         const index = parseInt(choice) - 1;
 
         if (index >= 0 && index < languages.length) {
             this.config.set('language', languages[index]);
-            console.log(`✅ 语言已设置为: ${languages[index]}`);
+            console.log(`✅ Language set to: ${languages[index]}`);
         } else {
-            console.log('❌ 无效选择');
+            console.log('❌ Invalid selection');
         }
     }
 
     async toggleEnabled() {
         const current = this.config.get('enabled', true);
         this.config.set('enabled', !current);
-        console.log(`✅ 通知已${!current ? '启用' : '禁用'}`);
+        console.log(`✅ Notifications ${!current ? 'enabled' : 'disabled'}`);
     }
 
     async configureTimeout() {
-        const timeout = await this.question('设置超时时间(秒): ');
+        const timeout = await this.question('Set timeout (seconds): ');
         const timeoutNum = parseInt(timeout);
         if (timeoutNum > 0 && timeoutNum <= 30) {
             this.config.set('timeout', timeoutNum);
-            console.log(`✅ 超时时间已设置为: ${timeoutNum}秒`);
+            console.log(`✅ Timeout set to: ${timeoutNum} seconds`);
         } else {
-            console.log('❌ 无效的超时时间 (1-30秒)');
+            console.log('❌ Invalid timeout (1-30 seconds)');
         }
     }
 
@@ -176,36 +176,36 @@ class ConfigurationManager {
         const desktop = new DesktopChannel();
         const soundCategories = desktop.getAvailableSounds();
 
-        console.log('\n=== 音效配置 ===');
+        console.log('\n=== Sound Configuration ===');
         
         // Configure completed sound
-        console.log('\n--- 配置任务完成提示音 ---');
-        const completedSound = await this.selectSoundFromCategories(soundCategories, '任务完成');
+        console.log('\n--- Configure Task Completion Sound ---');
+        const completedSound = await this.selectSoundFromCategories(soundCategories, 'task completion');
         if (completedSound) {
             this.config.set('sound.completed', completedSound);
-            console.log(`✅ 任务完成提示音已设置为: ${completedSound}`);
+            console.log(`✅ Task completion sound set to: ${completedSound}`);
         }
 
         // Configure waiting sound
-        console.log('\n--- 配置等待输入提示音 ---');
-        const waitingSound = await this.selectSoundFromCategories(soundCategories, '等待输入');
+        console.log('\n--- Configure Waiting Input Sound ---');
+        const waitingSound = await this.selectSoundFromCategories(soundCategories, 'waiting input');
         if (waitingSound) {
             this.config.set('sound.waiting', waitingSound);
-            console.log(`✅ 等待输入提示音已设置为: ${waitingSound}`);
+            console.log(`✅ Waiting input sound set to: ${waitingSound}`);
         }
     }
 
     async selectSoundFromCategories(soundCategories, type) {
         const categories = Object.keys(soundCategories);
         
-        console.log(`\n选择${type}音效分类:`);
+        console.log(`\nSelect ${type} sound category:`);
         categories.forEach((category, index) => {
             const count = soundCategories[category].length;
-            console.log(`${index + 1}. ${category} (${count}个音效)`);
+            console.log(`${index + 1}. ${category} (${count} sounds)`);
         });
-        console.log('0. 跳过');
+        console.log('0. Skip');
 
-        const choice = await this.question(`\n请选择分类 (0-${categories.length}): `);
+        const choice = await this.question(`\nPlease select category (0-${categories.length}): `);
         const index = parseInt(choice) - 1;
 
         if (choice === '0') {
@@ -217,19 +217,19 @@ class ConfigurationManager {
             const sounds = soundCategories[category];
             return await this.selectSoundFromList(sounds, type);
         } else {
-            console.log('❌ 无效选择');
+            console.log('❌ Invalid selection');
             return null;
         }
     }
 
     async selectSoundFromList(sounds, type) {
-        console.log(`\n选择${type}提示音:`);
+        console.log(`\nSelect ${type} sound:`);
         sounds.forEach((sound, index) => {
             console.log(`${index + 1}. ${sound}`);
         });
-        console.log('0. 返回分类选择');
+        console.log('0. Return to category selection');
 
-        const choice = await this.question(`\n请选择 (0-${sounds.length}): `);
+        const choice = await this.question(`\nPlease select (0-${sounds.length}): `);
         const index = parseInt(choice) - 1;
 
         if (choice === '0') {
@@ -244,37 +244,37 @@ class ConfigurationManager {
                 const DesktopChannel = require('../channels/local/desktop');
                 const desktop = new DesktopChannel();
                 desktop._playSound(selectedSound);
-                console.log(`播放音效: ${selectedSound}`);
+                console.log(`Playing sound: ${selectedSound}`);
             } catch (error) {
                 // Ignore playback errors
             }
 
-            const confirm = await this.question('确认使用这个音效吗? (y/n): ');
+            const confirm = await this.question('Confirm using this sound? (y/n): ');
             if (confirm.toLowerCase() === 'y' || confirm.toLowerCase() === 'yes') {
                 return selectedSound;
             }
         } else {
-            console.log('❌ 无效选择');
+            console.log('❌ Invalid selection');
         }
 
         return null;
     }
 
     async configureChannels() {
-        console.log('\n=== 通知渠道配置 ===');
-        console.log('1. 桌面通知 (已启用)');
-        console.log('2. 邮件通知');
-        console.log('3. Discord通知 (即将支持)');
-        console.log('4. Telegram通知 (即将支持)');
-        console.log('5. WhatsApp通知 (即将支持)');
-        console.log('6. 飞书通知 (即将支持)');
-        console.log('0. 返回主菜单');
+        console.log('\n=== Notification Channel Configuration ===');
+        console.log('1. Desktop Notifications (Enabled)');
+        console.log('2. Email Notifications');
+        console.log('3. Discord Notifications (Coming Soon)');
+        console.log('4. Telegram Notifications (Coming Soon)');
+        console.log('5. WhatsApp Notifications (Coming Soon)');
+        console.log('6. Feishu Notifications (Coming Soon)');
+        console.log('0. Return to Main Menu');
 
-        const choice = await this.question('\n请选择要配置的渠道 (0-6): ');
+        const choice = await this.question('\nPlease select channel to configure (0-6): ');
 
         switch (choice) {
             case '1':
-                console.log('\n桌面通知已启用且工作正常！');
+                console.log('\nDesktop notifications are enabled and working properly!');
                 break;
             case '2':
                 await this.configureEmailChannel();
@@ -283,142 +283,142 @@ class ConfigurationManager {
             case '4':
             case '5':
             case '6':
-                console.log('\n此渠道即将在后续版本中支持！');
+                console.log('\nThis channel will be supported in future versions!');
                 break;
             case '0':
                 return;
             default:
-                console.log('❌ 无效选择');
+                console.log('❌ Invalid selection');
         }
         
         if (choice !== '0') {
-            await this.question('\n按回车继续...');
+            await this.question('\nPress Enter to continue...');
         }
     }
 
     async configureRelay() {
-        console.log('\n=== 命令中继配置 ===');
-        console.log('(此功能将在后续版本中实现)');
-        console.log('将支持通过通知渠道发送命令，自动在Claude Code中执行');
+        console.log('\n=== Command Relay Configuration ===');
+        console.log('(This feature will be implemented in future versions)');
+        console.log('Will support sending commands via notification channels and auto-executing in Claude Code');
         
-        await this.question('\n按回车继续...');
+        await this.question('\nPress Enter to continue...');
     }
 
     async configureCustomMessages() {
-        console.log('\n=== 自定义消息配置 ===');
-        console.log('提示：使用 {project} 作为项目名占位符');
-        console.log('示例：[{project}] 任务已完成！\n');
+        console.log('\n=== Custom Message Configuration ===');
+        console.log('Tip: Use {project} as project name placeholder');
+        console.log('Example: [{project}] Task completed!\n');
 
         // Configure completed message
-        const currentCompleted = this.config.get('customMessages.completed') || '使用默认文本';
-        console.log(`当前任务完成文本: ${currentCompleted}`);
-        const completedMsg = await this.question('新的任务完成文本 (回车跳过): ');
+        const currentCompleted = this.config.get('customMessages.completed') || 'Use default text';
+        console.log(`Current task completion text: ${currentCompleted}`);
+        const completedMsg = await this.question('New task completion text (Enter to skip): ');
         if (completedMsg.trim()) {
             this.config.set('customMessages.completed', completedMsg.trim());
-            console.log('✅ 已更新任务完成文本');
+            console.log('✅ Updated task completion text');
         }
 
         // Configure waiting message
-        const currentWaiting = this.config.get('customMessages.waiting') || '使用默认文本';
-        console.log(`\n当前等待输入文本: ${currentWaiting}`);
-        const waitingMsg = await this.question('新的等待输入文本 (回车跳过): ');
+        const currentWaiting = this.config.get('customMessages.waiting') || 'Use default text';
+        console.log(`\nCurrent waiting input text: ${currentWaiting}`);
+        const waitingMsg = await this.question('New waiting input text (Enter to skip): ');
         if (waitingMsg.trim()) {
             this.config.set('customMessages.waiting', waitingMsg.trim());
-            console.log('✅ 已更新等待输入文本');
+            console.log('✅ Updated waiting input text');
         }
     }
 
     async testNotifications() {
-        console.log('\n=== 测试通知 ===');
+        console.log('\n=== Test Notifications ===');
         
         try {
             const Notifier = require('../core/notifier');
             const notifier = new Notifier(this.config);
             await notifier.initializeChannels();
             
-            console.log('发送任务完成通知...');
+            console.log('Sending task completion notification...');
             await notifier.notify('completed', { test: true });
             
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            console.log('发送等待输入通知...');
+            console.log('Sending waiting input notification...');
             await notifier.notify('waiting', { test: true });
             
-            console.log('✅ 测试完成');
+            console.log('✅ Test completed');
         } catch (error) {
-            console.error('❌ 测试失败:', error.message);
+            console.error('❌ Test failed:', error.message);
         }
         
-        await this.question('\n按回车继续...');
+        await this.question('\nPress Enter to continue...');
     }
 
     async configureEmailChannel() {
-        console.log('\n=== 邮件通知配置 ===');
+        console.log('\n=== Email Notification Configuration ===');
         
-        // 获取当前邮件配置
+        // Get current email configuration
         const currentEmailConfig = this.config.getChannel('email') || { enabled: false, config: {} };
         const emailConfig = currentEmailConfig.config || {};
         
-        console.log(`当前状态: ${currentEmailConfig.enabled ? '✅ 已启用' : '❌ 已禁用'}`);
+        console.log(`Current status: ${currentEmailConfig.enabled ? '✅ Enabled' : '❌ Disabled'}`);
         
-        console.log('\n📧 SMTP 发送配置:');
+        console.log('\n📧 SMTP Sending Configuration:');
         
-        // SMTP 主机配置
+        // SMTP host configuration
         const currentHost = emailConfig.smtp?.host || '';
-        console.log(`当前 SMTP 主机: ${currentHost || '未配置'}`);
-        const smtpHost = await this.question('SMTP 主机 (如: smtp.gmail.com): ');
+        console.log(`Current SMTP host: ${currentHost || 'Not configured'}`);
+        const smtpHost = await this.question('SMTP host (e.g., smtp.gmail.com): ');
         
-        // SMTP 端口配置
+        // SMTP port configuration
         const currentPort = emailConfig.smtp?.port || 587;
-        console.log(`当前 SMTP 端口: ${currentPort}`);
-        const smtpPortInput = await this.question('SMTP 端口 (默认 587): ');
+        console.log(`Current SMTP port: ${currentPort}`);
+        const smtpPortInput = await this.question('SMTP port (default 587): ');
         const smtpPort = parseInt(smtpPortInput) || 587;
         
-        // 安全连接配置
+        // Security connection configuration
         const currentSecure = emailConfig.smtp?.secure || false;
-        console.log(`当前安全连接: ${currentSecure ? 'SSL/TLS' : 'STARTTLS'}`);
-        const secureInput = await this.question('使用 SSL/TLS? (y/n，默认n): ');
+        console.log(`Current secure connection: ${currentSecure ? 'SSL/TLS' : 'STARTTLS'}`);
+        const secureInput = await this.question('Use SSL/TLS? (y/n, default n): ');
         const secure = secureInput.toLowerCase() === 'y';
         
-        // 用户名配置
+        // Username configuration
         const currentUser = emailConfig.smtp?.auth?.user || '';
-        console.log(`当前用户名: ${currentUser || '未配置'}`);
-        const smtpUser = await this.question('SMTP 用户名 (邮箱地址): ');
+        console.log(`Current username: ${currentUser || 'Not configured'}`);
+        const smtpUser = await this.question('SMTP username (email address): ');
         
-        // 密码配置
-        console.log('SMTP 密码: [隐藏]');
-        const smtpPass = await this.question('SMTP 密码 (应用密码): ');
+        // Password configuration
+        console.log('SMTP password: [Hidden]');
+        const smtpPass = await this.question('SMTP password (app password): ');
         
-        console.log('\n📥 IMAP 接收配置 (用于接收回复):');
+        console.log('\n📥 IMAP Receiving Configuration (for receiving replies):');
         
-        // IMAP 主机配置
+        // IMAP host configuration
         const currentImapHost = emailConfig.imap?.host || '';
-        console.log(`当前 IMAP 主机: ${currentImapHost || '未配置'}`);
-        const imapHost = await this.question('IMAP 主机 (如: imap.gmail.com): ');
+        console.log(`Current IMAP host: ${currentImapHost || 'Not configured'}`);
+        const imapHost = await this.question('IMAP host (e.g., imap.gmail.com): ');
         
-        // IMAP 端口配置
+        // IMAP port configuration
         const currentImapPort = emailConfig.imap?.port || 993;
-        console.log(`当前 IMAP 端口: ${currentImapPort}`);
-        const imapPortInput = await this.question('IMAP 端口 (默认 993): ');
+        console.log(`Current IMAP port: ${currentImapPort}`);
+        const imapPortInput = await this.question('IMAP port (default 993): ');
         const imapPort = parseInt(imapPortInput) || 993;
         
-        // IMAP 安全连接
+        // IMAP secure connection
         const currentImapSecure = emailConfig.imap?.secure !== false;
-        const imapSecureInput = await this.question('IMAP 使用 SSL? (y/n，默认y): ');
+        const imapSecureInput = await this.question('IMAP use SSL? (y/n, default y): ');
         const imapSecure = imapSecureInput.toLowerCase() !== 'n';
         
-        // 收件人配置
-        console.log('\n📬 收件人配置:');
+        // Recipient configuration
+        console.log('\n📬 Recipient Configuration:');
         const currentTo = emailConfig.to || '';
-        console.log(`当前收件人: ${currentTo || '未配置'}`);
-        const toEmail = await this.question('收件人邮箱: ');
+        console.log(`Current recipient: ${currentTo || 'Not configured'}`);
+        const toEmail = await this.question('Recipient email: ');
         
-        // 发件人配置
+        // Sender configuration
         const currentFrom = emailConfig.from || '';
-        console.log(`当前发件人: ${currentFrom || '未配置'}`);
-        const fromEmail = await this.question(`发件人显示名 (默认: TaskPing <${smtpUser}>): `);
+        console.log(`Current sender: ${currentFrom || 'Not configured'}`);
+        const fromEmail = await this.question(`Sender display name (default: TaskPing <${smtpUser}>): `);
         
-        // 构建邮件配置
+        // Build email configuration
         const newEmailConfig = {
             enabled: true,
             config: {
@@ -445,26 +445,26 @@ class ConfigurationManager {
             }
         };
         
-        // 保存配置
+        // Save configuration
         this.config.setChannel('email', newEmailConfig);
-        console.log('\n✅ 邮件配置已保存');
+        console.log('\n✅ Email configuration saved');
         
-        // 询问是否测试
-        const testChoice = await this.question('\n测试邮件发送? (y/n): ');
+        // Ask whether to test
+        const testChoice = await this.question('\nTest email sending? (y/n): ');
         if (testChoice.toLowerCase() === 'y') {
             await this.testEmailChannel();
         }
     }
     
     async testEmailChannel() {
-        console.log('\n🧪 测试邮件发送...');
+        console.log('\n🧪 Testing email sending...');
         
         try {
             const EmailChannel = require('../channels/email/smtp');
             const emailConfig = this.config.getChannel('email');
             
             if (!emailConfig || !emailConfig.enabled) {
-                console.log('❌ 邮件渠道未启用');
+                console.log('❌ Email channel not enabled');
                 return;
             }
             
@@ -472,16 +472,16 @@ class ConfigurationManager {
             const testResult = await emailChannel.test();
             
             if (testResult) {
-                console.log('✅ 邮件发送测试成功！');
-                console.log('📧 请检查您的邮箱，应该收到一封测试邮件');
-                console.log('💡 您可以尝试回复该邮件来测试命令中继功能');
+                console.log('✅ Email sending test successful!');
+                console.log('📧 Please check your inbox, you should receive a test email');
+                console.log('💡 You can try replying to that email to test the command relay feature');
             } else {
-                console.log('❌ 邮件发送测试失败');
-                console.log('请检查您的 SMTP 配置是否正确');
+                console.log('❌ Email sending test failed');
+                console.log('Please check if your SMTP configuration is correct');
             }
         } catch (error) {
-            console.log('❌ 邮件测试失败:', error.message);
-            console.log('请检查您的网络连接和邮件配置');
+            console.log('❌ Email test failed:', error.message);
+            console.log('Please check your network connection and email configuration');
         }
     }
 
@@ -492,15 +492,15 @@ TaskPing Configuration Manager
 Usage: taskping config [options]
 
 Options:
-  --show    显示当前配置
-  --help    显示帮助信息
+  --show    Show current configuration
+  --help    Show help information
 
 Interactive Commands:
-  1. 基础设置    - 语言、启用状态、超时时间等
-  2. 音效配置    - 配置任务完成和等待输入的提示音
-  3. 通知渠道    - 配置邮件、Discord、Telegram等通知渠道
-  4. 命令中继    - 配置远程命令执行功能
-  5. 测试通知    - 测试所有配置的通知渠道
+  1. Basic Settings    - Language, enabled status, timeout, etc.
+  2. Sound Configuration    - Configure task completion and waiting input sounds
+  3. Notification Channels    - Configure email, Discord, Telegram and other notification channels
+  4. Command Relay    - Configure remote command execution features
+  5. Test Notifications    - Test all configured notification channels
         `);
     }
 }

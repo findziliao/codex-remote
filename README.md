@@ -1,41 +1,41 @@
-# TaskPing - 智能邮件自动化 Claude Code 助手
+# TaskPing - Intelligent Email Automation Assistant for Claude Code
 
-TaskPing 是一个智能的邮件自动化工具，实现了 Claude Code 与邮件系统的深度集成。通过监听邮件回复，自动将回复内容输入到对应的 Claude Code 会话中执行，让你可以在任何地方通过邮件远程控制 Claude Code。
+TaskPing is an intelligent email automation tool that deeply integrates Claude Code with email systems. By monitoring email replies, it automatically inputs reply content into corresponding Claude Code sessions for execution, allowing you to remotely control Claude Code from anywhere via email.
 
-## 🚀 核心功能
+## 🚀 Core Features
 
-### 📧 智能邮件通知
-- **自动检测**: 基于 Claude Code 官方 hooks 机制，自动识别任务完成和等待输入状态
-- **实时通知**: 任务完成时自动发送邮件，包含完整的用户问题和 Claude 回复内容
-- **会话绑定**: 邮件与特定的 tmux 会话绑定，确保回复到正确的 Claude Code 窗口
+### 📧 Smart Email Notifications
+- **Auto Detection**: Based on Claude Code official hooks mechanism, automatically identifies task completion and waiting input states
+- **Real-time Notifications**: Automatically sends emails when tasks complete, including complete user questions and Claude responses
+- **Session Binding**: Emails are bound to specific tmux sessions, ensuring replies go to the correct Claude Code window
 
-### 🔄 邮件回复自动执行
-- **远程控制**: 直接回复邮件，内容自动输入到对应的 Claude Code 会话中
-- **智能注入**: 自动检测 tmux 会话状态，将命令精确注入到正确的窗口
-- **防重复处理**: 实现邮件去重机制，避免重复处理同一封邮件
+### 🔄 Email Reply Auto-Execution
+- **Remote Control**: Directly reply to emails, content automatically inputs into corresponding Claude Code sessions
+- **Smart Injection**: Automatically detects tmux session state, precisely injects commands into correct windows
+- **Duplicate Prevention**: Implements email deduplication mechanism to avoid processing the same email twice
 
-### 🛡️ 稳定性保障
-- **单实例运行**: 确保只有一个邮件监听进程运行，避免重复处理
-- **状态管理**: 完善的会话状态跟踪和错误恢复机制
-- **安全验证**: 邮件来源验证，确保只处理授权用户的回复
+### 🛡️ Stability Assurance
+- **Single Instance**: Ensures only one email monitoring process runs, avoiding duplicate processing
+- **State Management**: Comprehensive session state tracking and error recovery mechanisms
+- **Security Verification**: Email source verification, ensures only authorized user replies are processed
 
-## 📦 快速安装
+## 📦 Quick Installation
 
-### 1. 克隆项目
+### 1. Clone Project
 ```bash
-git clone https://github.com/your-username/TaskPing.git
+git clone https://github.com/JessyTsui/TaskPing.git
 cd TaskPing
 npm install
 ```
 
-### 2. 配置邮箱
+### 2. Configure Email
 ```bash
 npm run config
 ```
-按照提示配置你的邮箱信息（SMTP 和 IMAP）。
+Follow prompts to configure your email information (SMTP and IMAP).
 
-### 3. 配置 Claude Code 钩子
-将以下内容添加到 `~/.claude/settings.json` 的 `hooks` 部分：
+### 3. Configure Claude Code Hooks
+Add the following content to the `hooks` section of `~/.claude/settings.json`:
 
 ```json
 {
@@ -60,155 +60,155 @@ npm run config
 }
 ```
 
-### 4. 全局安装 claude-control 命令
+### 4. Install Global claude-control Command
 ```bash
 node install-global.js
 ```
 
-### 5. 启动邮件监听服务
+### 5. Start Email Monitoring Service
 ```bash
 npm run relay:pty
 ```
 
-## 🎮 使用方法
+## 🎮 Usage
 
-### 1. 创建 Claude Code 会话
+### 1. Create Claude Code Session
 ```bash
-# 在任何目录下都可以运行
+# Can run from any directory
 claude-control --session project-name
 ```
 
-### 2. 正常使用 Claude Code
-在 tmux 会话中正常与 Claude 对话：
+### 2. Use Claude Code Normally
+Have normal conversations with Claude in tmux session:
 ```
-> 请帮我分析这个项目的代码结构
+> Please help me analyze the code structure of this project
 
-Claude 回复...
-```
-
-### 3. 自动邮件通知
-当 Claude 完成任务时，你会收到包含完整对话内容的邮件通知。
-
-### 4. 邮件回复控制
-直接回复邮件，输入下一个指令：
-```
-请继续优化代码性能
+Claude responds...
 ```
 
-### 5. 自动执行
-你的回复会自动注入到对应的 Claude Code 会话中并执行。
+### 3. Automatic Email Notifications
+When Claude completes tasks, you'll receive email notifications containing complete conversation content.
 
-## 🔧 项目架构
+### 4. Email Reply Control
+Directly reply to emails with your next instruction:
+```
+Please continue optimizing code performance
+```
+
+### 5. Automatic Execution
+Your reply will be automatically injected into the corresponding Claude Code session and executed.
+
+## 🔧 Project Architecture
 
 ```
 TaskPing/
 ├── src/
 │   ├── channels/email/
-│   │   └── smtp.js           # SMTP 邮件发送
+│   │   └── smtp.js           # SMTP email sending
 │   ├── core/
-│   │   ├── config.js         # 配置管理
-│   │   ├── logger.js         # 日志系统
-│   │   └── notifier.js       # 通知协调器
+│   │   ├── config.js         # Configuration management
+│   │   ├── logger.js         # Logging system
+│   │   └── notifier.js       # Notification coordinator
 │   ├── data/
-│   │   ├── session-map.json  # 会话映射表
-│   │   └── processed-messages.json  # 已处理邮件记录
+│   │   ├── session-map.json  # Session mapping table
+│   │   └── processed-messages.json  # Processed email records
 │   ├── relay/
-│   │   └── relay-pty.js      # 邮件监听和 PTY 注入服务
+│   │   └── relay-pty.js      # Email monitoring and PTY injection service
 │   └── utils/
-│       └── tmux-monitor.js   # Tmux 会话监控
-├── taskping.js               # 主入口文件
-├── claude-control.js         # Claude Code 会话管理
-├── start-relay-pty.js        # 邮件监听服务启动器
-└── install-global.js         # 全局安装脚本
+│       └── tmux-monitor.js   # Tmux session monitoring
+├── taskping.js               # Main entry file
+├── claude-control.js         # Claude Code session management
+├── start-relay-pty.js        # Email monitoring service starter
+└── install-global.js         # Global installation script
 ```
 
-## 🛠️ 核心技术实现
+## 🛠️ Core Technical Implementation
 
-### 邮件监听与处理
-- 使用 `node-imap` 监听 IMAP 邮箱新邮件
-- 实现邮件去重机制（基于 UID、messageId 和内容哈希）
-- 异步事件处理，避免竞态条件
+### Email Monitoring and Processing
+- Uses `node-imap` to monitor IMAP mailbox for new emails
+- Implements email deduplication mechanism (based on UID, messageId, and content hash)
+- Asynchronous event handling to avoid race conditions
 
-### 会话管理
-- Tmux 会话自动检测和命令注入
-- 会话状态持久化存储
-- 支持多会话并发处理
+### Session Management
+- Tmux session auto-detection and command injection
+- Session state persistent storage
+- Support for concurrent multi-session processing
 
-### 通知系统
-- 自动捕获当前 tmux 会话的用户问题和 Claude 回复
-- 生成包含完整对话内容的邮件通知
-- 支持多种通知渠道（桌面通知、邮件等）
+### Notification System
+- Automatically captures current tmux session's user questions and Claude responses
+- Generates email notifications containing complete conversation content
+- Supports multiple notification channels (desktop notifications, email, etc.)
 
-## 🔍 故障排除
+## 🔍 Troubleshooting
 
-### 邮件重复处理问题
-确保只运行一个邮件监听进程：
+### Email Duplicate Processing Issue
+Ensure only one email monitoring process is running:
 ```bash
-# 检查运行状态
+# Check running status
 ps aux | grep relay-pty
 
-# 停止所有进程
+# Stop all processes
 pkill -f relay-pty
 
-# 重新启动
+# Restart
 npm run relay:pty
 ```
 
-### 命令注入失败
-检查 tmux 会话状态：
+### Command Injection Failure
+Check tmux session status:
 ```bash
-# 查看所有会话
+# View all sessions
 tmux list-sessions
 
-# 检查会话内容
+# Check session content
 tmux capture-pane -t session-name -p
 ```
 
-### 邮件配置问题
-测试邮件连接：
+### Email Configuration Issues
+Test email connection:
 ```bash
-# 测试 SMTP
+# Test SMTP
 node -e "
 const config = require('./config/user.json');
 console.log('SMTP Config:', config.email.config.smtp);
 "
 
-# 测试 IMAP
+# Test IMAP
 node -e "
 const config = require('./config/user.json');
 console.log('IMAP Config:', config.email.config.imap);
 "
 ```
 
-## 🎯 使用场景
+## 🎯 Use Cases
 
-### 远程编程工作流
-1. 在办公室启动一个 Claude Code 代码审查任务
-2. 下班回家，收到邮件"代码审查完成，发现3个问题"
-3. 回复邮件"请修复第一个问题"
-4. Claude 自动开始修复，完成后再次发送邮件通知
-5. 继续回复邮件进行下一步操作
+### Remote Programming Workflow
+1. Start a Claude Code code review task at the office
+2. Go home, receive email "Code review completed, found 3 issues"
+3. Reply to email "Please fix the first issue"
+4. Claude automatically starts fixing, sends email notification when complete
+5. Continue replying to emails for next steps
 
-### 长时间任务监控
-1. 启动大型项目重构任务
-2. Claude 分步骤完成各个模块
-3. 每个阶段完成都发送邮件通知进度
-4. 通过邮件回复指导下一步方向
+### Long-running Task Monitoring
+1. Start large project refactoring task
+2. Claude completes modules step by step
+3. Each stage completion sends email notification of progress
+4. Guide next steps through email replies
 
-## 🤝 贡献指南
+## 🤝 Contributing
 
-1. Fork 本项目
-2. 创建功能分支：`git checkout -b feature/new-feature`
-3. 提交更改：`git commit -am 'Add new feature'`
-4. 推送分支：`git push origin feature/new-feature`
-5. 提交 Pull Request
+1. Fork this project
+2. Create feature branch: `git checkout -b feature/new-feature`
+3. Commit changes: `git commit -am 'Add new feature'`
+4. Push branch: `git push origin feature/new-feature`
+5. Submit Pull Request
 
-## 📄 许可证
+## 📄 License
 
-本项目采用 MIT License 开源协议。
+This project is licensed under the MIT License.
 
 ---
 
-**让 Claude Code 工作流程更加智能高效！**
+**Make Claude Code workflows smarter and more efficient!**
 
-如果这个项目对你有帮助，请给我们一个 ⭐！
+If this project helps you, please give us a ⭐!

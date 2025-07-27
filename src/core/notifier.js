@@ -145,7 +145,7 @@ class Notifier {
             this._loadI18n();
         }
 
-        const langData = this.i18n[lang] || this.i18n['zh-CN'];
+        const langData = this.i18n[lang] || this.i18n['en'];
         return langData[type] || langData.completed;
     }
 
@@ -156,12 +156,12 @@ class Notifier {
         this.i18n = {
             'zh-CN': {
                 completed: {
-                    title: 'Claude Code - 任务完成',
-                    message: '[{project}] 任务已完成，Claude正在等待下一步指令'
+                    title: 'Claude Code - Task Completed',
+                    message: '[{project}] Task completed, Claude is waiting for next instruction'
                 },
                 waiting: {
-                    title: 'Claude Code - 等待输入',
-                    message: '[{project}] Claude需要您的进一步指导'
+                    title: 'Claude Code - Waiting for Input',
+                    message: '[{project}] Claude needs your further guidance'
                 }
             },
             'en': {

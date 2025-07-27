@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * relay-pty.js - 修复版本
- * 使用 node-imap 替代 ImapFlow 来解决飞书邮箱兼容性问题
+ * relay-pty.js - Fixed version
+ * Uses node-imap instead of ImapFlow to resolve Feishu email compatibility issues
  */
 
 require('dotenv').config();
@@ -13,7 +13,7 @@ const { existsSync, readFileSync, writeFileSync } = require('fs');
 const path = require('path');
 const pino = require('pino');
 
-// 配置日志
+// Configure logging
 const log = pino({
     level: process.env.LOG_LEVEL || 'info',
     transport: {
@@ -25,23 +25,23 @@ const log = pino({
     }
 });
 
-// 全局配置
+// Global configuration
 const SESS_PATH = process.env.SESSION_MAP_PATH || path.join(__dirname, '../data/session-map.json');
 const PROCESSED_PATH = path.join(__dirname, '../data/processed-messages.json');
 const ALLOWED_SENDERS = (process.env.ALLOWED_SENDERS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 const PTY_POOL = new Map();
 let PROCESSED_MESSAGES = new Set();
 
-// 加载已处理消息
+// Load processed messages
 function loadProcessedMessages() {
     if (existsSync(PROCESSED_PATH)) {
         try {
             const data = JSON.parse(readFileSync(PROCESSED_PATH, 'utf8'));
             const now = Date.now();
-            // 只保留7天内的记录
+            // Keep only records from the last 7 days
             const validMessages = data.filter(item => (now - item.timestamp) < 7 * 24 * 60 * 60 * 1000);
             PROCESSED_MESSAGES = new Set(validMessages.map(item => item.id));
-            // 更新文件，移除过期记录
+            // Update file, remove expired records
             saveProcessedMessages();
         } catch (error) {
             log.error({ error }, 'Failed to load processed messages');
@@ -50,7 +50,7 @@ function loadProcessedMessages() {
     }
 }
 
-// 保存已处理消息
+// Save processed messages
 function saveProcessedMessages() {
     try {
         const now = Date.now();
@@ -59,7 +59,7 @@ function saveProcessedMessages() {
             timestamp: now
         }));
         
-        // 确保目录存在
+        // Ensure directory exists
         const dir = path.dirname(PROCESSED_PATH);
         if (!existsSync(dir)) {
             require('fs').mkdirSync(dir, { recursive: true });
@@ -71,7 +71,7 @@ function saveProcessedMessages() {
     }
 }
 
-// 加载会话映射
+// Load session mapping
 function loadSessions() {
     if (!existsSync(SESS_PATH)) return {};
     try {
@@ -82,14 +82,14 @@ function loadSessions() {
     }
 }
 
-// 检查发件人是否在白名单中
+// Check if sender is in whitelist
 function isAllowed(fromAddress) {
     if (!fromAddress) return false;
     const addr = fromAddress.toLowerCase();
     return ALLOWED_SENDERS.some(allowed => addr.includes(allowed));
 }
 
-// 从主题中提取 TaskPing token
+// Extract TaskPing token from subject
 function extractTokenFromSubject(subject = '') {
     const patterns = [
         /\[TaskPing\s+#([A-Za-z0-9_-]+)\]/,
@@ -105,23 +105,23 @@ function extractTokenFromSubject(subject = '') {
     return null;
 }
 
-// 清理邮件正文
+// Clean email text
 function cleanEmailText(text = '') {
     const lines = text.split(/\r?\n/);
     const cleanLines = [];
     
     for (const line of lines) {
-        // 检测引用内容（更全面的检测）
+        // Detect quoted content (more comprehensive detection)
         if (line.includes('-----Original Message-----') ||
             line.includes('--- Original Message ---') ||
-            line.includes('在') && line.includes('写道:') ||
+            line.includes('at') && line.includes('wrote:') ||
             line.includes('On') && line.includes('wrote:') ||
-            line.includes('会话ID:') ||
+            line.includes('Session ID:') ||
             line.includes('Session ID:') ||
             line.includes('<noreply@pandalla.ai>') ||
-            line.includes('TaskPing 通知系统') ||
-            line.includes('于2025年') && line.includes('写道：') ||
-            line.match(/^>.*/) ||  // 引用行以 > 开头
+            line.includes('TaskPing Notification System') ||
+            line.includes('on 2025') && line.includes('wrote:') ||
+            line.match(/^>.*/) ||  // Quote lines start with >
             line.includes('From:') && line.includes('@') ||
             line.includes('To:') && line.includes('@') ||
             line.includes('Subject:') ||
@@ -130,71 +130,71 @@ function cleanEmailText(text = '') {
             break;
         }
         
-        // 检测邮件签名
+        // Detect email signature
         if (line.match(/^--\s*$/) || 
             line.includes('Sent from') ||
-            line.includes('发自我的') ||
+            line.includes('Sent from my') ||
             line.includes('Best regards') ||
-            line.includes('此致敬礼')) {
+            line.includes('Sincerely')) {
             break;
         }
         
         cleanLines.push(line);
     }
     
-    // 获取有效内容
+    // Get valid content
     const cleanText = cleanLines.join('\n').trim();
     
-    // 查找实际的命令内容（跳过问候语等）
+    // Find actual command content (skip greetings, etc.)
     const contentLines = cleanText.split(/\r?\n/).filter(l => l.trim().length > 0);
     
-    // 查找命令行（通常是包含实际命令的行）
+    // Find command line (usually contains the actual command)
     for (const line of contentLines) {
         const trimmedLine = line.trim();
-        // 跳过常见的问候语
-        if (trimmedLine.match(/^(hi|hello|谢谢|thanks|好的|ok|是的|yes)/i)) {
+        // Skip common greetings
+        if (trimmedLine.match(/^(hi|hello|thank you|thanks|ok|yes)/i)) {
             continue;
         }
-        // 跳过纯中文问候
-        if (trimmedLine.match(/^(这是|请|帮我|您好)/)) {
+        // Skip pure Chinese greetings
+        if (trimmedLine.match(/^(this is|please|help me|hello)/)) {
             continue;
         }
-        // 跳过邮件引用残留
-        if (trimmedLine.includes('TaskPing 通知系统') ||
+        // Skip remaining email quotes
+        if (trimmedLine.includes('TaskPing Notification System') ||
             trimmedLine.includes('<noreply@pandalla.ai>') ||
-            trimmedLine.includes('于2025年')) {
+            trimmedLine.includes('on 2025')) {
             continue;
         }
-        // 如果找到疑似命令的行，检查并去重
+        // If a suspected command line is found, check and deduplicate
         if (trimmedLine.length > 3) {
             const command = trimmedLine.slice(0, 8192);
-            // 检查命令是否重复（如："喝可乐好吗喝可乐好吗"）
+            // Check if command is duplicated (e.g., "drink cola okay drink cola okay")
             const deduplicatedCommand = deduplicateCommand(command);
             return deduplicatedCommand;
         }
     }
     
-    // 如果没有找到明显的命令，返回第一行非空内容（并去重）
+    // If no obvious command is found, return first non-empty line (and deduplicate)
     const firstLine = contentLines[0] || '';
     const command = firstLine.slice(0, 8192).trim();
     return deduplicateCommand(command);
 }
 
-// 去重复的命令文本（处理如："喝可乐好吗喝可乐好吗" -> "喝可乐好吗"）
+// Deduplicate command text (handle cases like: "drink cola okay drink cola okay" -> "drink cola okay")
 function deduplicateCommand(command) {
     if (!command || command.length === 0) {
         return command;
     }
     
-    // 检查命令是否是自己重复的
+    // Check if command is self-repeating
     const length = command.length;
     for (let i = 1; i <= Math.floor(length / 2); i++) {
         const firstPart = command.substring(0, i);
         const remaining = command.substring(i);
         
-        // 检查剩余部分是否完全重复第一部分
+        // Check if remaining part completely repeats the first part
         if (remaining === firstPart.repeat(Math.floor(remaining.length / firstPart.length))) {
-            // 找到重复模式，返回第一部分
+            // Found repetition pattern, return first part
             log.debug({ 
                 originalCommand: command, 
                 deduplicatedCommand: firstPart,
@@ -204,11 +204,11 @@ function deduplicateCommand(command) {
         }
     }
     
-    // 没有检测到重复，返回原命令
+    // No repetition detected, return original command
     return command;
 }
 
-// 无人值守远程命令注入 - tmux优先，智能备用
+// Unattended remote command injection - tmux priority, smart fallback
 async function injectCommandRemote(token, command) {
     const sessions = loadSessions();
     const session = sessions[token];
@@ -218,7 +218,7 @@ async function injectCommandRemote(token, command) {
         return false;
     }
     
-    // 检查会话是否过期
+    // Check if session has expired
     const now = Math.floor(Date.now() / 1000);
     if (session.expiresAt && session.expiresAt < now) {
         log.warn({ token }, 'Session expired');
@@ -228,7 +228,7 @@ async function injectCommandRemote(token, command) {
     try {
         log.info({ token, command }, 'Starting remote command injection');
         
-        // 方法1: 优先使用tmux无人值守注入
+        // Method 1: Prefer tmux unattended injection
         const TmuxInjector = require('./tmux-injector');
         const tmuxSessionName = session.tmuxSession || 'claude-taskping';
         const tmuxInjector = new TmuxInjector(log, tmuxSessionName);
@@ -241,7 +241,7 @@ async function injectCommandRemote(token, command) {
         } else {
             log.warn({ token, error: tmuxResult.error }, 'Tmux injection failed, trying smart fallback');
             
-            // 方法2: 回退到智能注入器
+            // Method 2: Fall back to smart injector
             const SmartInjector = require('./smart-injector');
             const smartInjector = new SmartInjector(log);
             
@@ -262,10 +262,10 @@ async function injectCommandRemote(token, command) {
     }
 }
 
-// 尝试自动粘贴到活跃窗口
+// Try automatic paste to active window
 async function tryAutoPaste(command) {
     return new Promise((resolve) => {
-        // 先复制命令到剪贴板
+        // First copy command to clipboard
         const { spawn } = require('child_process');
         const pbcopy = spawn('pbcopy');
         pbcopy.stdin.write(command);
@@ -277,7 +277,7 @@ async function tryAutoPaste(command) {
                 return;
             }
             
-            // 执行AppleScript自动粘贴
+            // Execute AppleScript auto-paste
             const autoScript = `
             tell application "System Events"
                 set claudeApps to {"Claude", "Claude Code", "Terminal", "iTerm2", "iTerm"}
@@ -333,10 +333,10 @@ async function tryAutoPaste(command) {
                 
                 switch(result) {
                     case 'terminal_typed':
-                        resolve({ success: true, method: '终端直接输入' });
+                        resolve({ success: true, method: 'Terminal direct input' });
                         break;
                     case 'claude_pasted':
-                        resolve({ success: true, method: 'Claude应用粘贴' });
+                        resolve({ success: true, method: 'Claude app paste' });
                         break;
                     case 'no_target_found':
                         resolve({ success: false, error: 'no_target_application' });
@@ -349,10 +349,10 @@ async function tryAutoPaste(command) {
     });
 }
 
-// 回退到剪贴板+强提醒
+// Fallback to clipboard + strong reminder
 async function fallbackToClipboard(command) {
     return new Promise((resolve) => {
-        // 复制到剪贴板
+        // Copy to clipboard
         const { spawn } = require('child_process');
         const pbcopy = spawn('pbcopy');
         pbcopy.stdin.write(command);
@@ -364,10 +364,10 @@ async function fallbackToClipboard(command) {
                 return;
             }
             
-            // 发送强提醒通知
+            // Send strong reminder notification
             const shortCommand = command.length > 30 ? command.substring(0, 30) + '...' : command;
             const notificationScript = `
-                display notification "🚨 邮件命令已自动复制！请立即在Claude Code中粘贴执行 (Cmd+V)" with title "TaskPing 自动注入" subtitle "${shortCommand.replace(/"/g, '\\"')}" sound name "Basso"
+                display notification "🚨 Email command auto-copied! Please paste and execute in Claude Code immediately (Cmd+V)" with title "TaskPing Auto-Injection" subtitle "${shortCommand.replace(/"/g, '\\"')}" sound name "Basso"
             `;
             
             const { exec } = require('child_process');
@@ -383,15 +383,15 @@ async function fallbackToClipboard(command) {
     });
 }
 
-// 处理邮件消息
+// Handle email message
 async function handleMailMessage(parsed) {
     try {
         log.debug({ uid: parsed.uid, messageId: parsed.messageId }, 'handleMailMessage called');
-        // 简化的重复检测（UID已在前面检查过）
+        // Simplified duplicate detection (UID already checked earlier)
         const uid = parsed.uid;
         const messageId = parsed.messageId;
         
-        // 仅对没有UID的邮件进行额外检查
+        // Only perform additional checks for emails without UID
         if (!uid) {
             const identifier = messageId;
             if (identifier && PROCESSED_MESSAGES.has(identifier)) {
@@ -399,7 +399,7 @@ async function handleMailMessage(parsed) {
                 return;
             }
             
-            // 内容哈希去重（作为最后手段）
+            // Content hash deduplication (as last resort)
             const emailSubject = parsed.subject || '';
             const emailDate = parsed.date || new Date();
             const contentHash = `${emailSubject}_${emailDate.getTime()}`;
@@ -410,13 +410,13 @@ async function handleMailMessage(parsed) {
             }
         }
         
-        // 验证发件人
+        // Verify sender
         if (!isAllowed(parsed.from?.text || '')) {
             log.warn({ from: parsed.from?.text }, 'Sender not allowed');
             return;
         }
         
-        // 提取token
+        // Extract token
         const subject = parsed.subject || '';
         const token = extractTokenFromSubject(subject);
         
@@ -425,7 +425,7 @@ async function handleMailMessage(parsed) {
             return;
         }
         
-        // 提取命令 - 添加详细调试
+        // Extract command - add detailed debugging
         log.debug({ 
             token, 
             rawEmailText: parsed.text?.substring(0, 500),
@@ -447,7 +447,7 @@ async function handleMailMessage(parsed) {
         
         log.info({ token, command }, 'Processing email command');
         
-        // 无人值守远程命令注入（tmux优先，智能备用）
+        // Unattended remote command injection (tmux priority, smart fallback)
         const success = await injectCommandRemote(token, command);
         
         if (!success) {
@@ -455,19 +455,19 @@ async function handleMailMessage(parsed) {
             return;
         }
         
-        // 标记为已处理（只在成功处理后标记）
+        // Mark as processed (only mark after successful processing)
         if (uid) {
-            // 标记UID为已处理
+            // Mark UID as processed
             PROCESSED_MESSAGES.add(uid);
             log.debug({ uid }, 'Marked message UID as processed');
         } else {
-            // 没有UID的邮件，使用messageId和内容哈希
+            // For emails without UID, use messageId and content hash
             if (messageId) {
                 PROCESSED_MESSAGES.add(messageId);
                 log.debug({ messageId }, 'Marked message as processed by messageId');
             }
             
-            // 内容哈希标记
+            // Content hash marking
             const emailSubject = parsed.subject || '';
             const emailDate = parsed.date || new Date();
             const contentHash = `${emailSubject}_${emailDate.getTime()}`;
@@ -475,7 +475,7 @@ async function handleMailMessage(parsed) {
             log.debug({ contentHash }, 'Marked message as processed by content hash');
         }
         
-        // 持久化已处理消息
+        // Persist processed messages
         saveProcessedMessages();
         
         log.info({ token }, 'Command injected successfully via remote method');
@@ -485,9 +485,9 @@ async function handleMailMessage(parsed) {
     }
 }
 
-// 启动IMAP监听
+// Start IMAP listening
 function startImap() {
-    // 首先加载已处理消息
+    // First load processed messages
     loadProcessedMessages();
     
     log.info('Starting relay-pty service', {
@@ -521,29 +521,29 @@ function startImap() {
             
             log.info(`Mailbox opened: ${box.messages.total} total messages, ${box.messages.new} new`);
             
-            // 只在启动时处理现有的未读邮件
+            // Only process existing unread emails at startup
             processExistingEmails(imap);
             
-            // 监听新邮件（主要机制）
+            // Listen for new emails (main mechanism)
             imap.on('mail', function(numNewMsgs) {
                 log.info({ newMessages: numNewMsgs }, 'New mail arrived');
-                // 增加延迟，避免与现有邮件处理冲突
+                // Add delay to avoid conflicts with existing email processing
                 setTimeout(() => {
                     processNewEmails(imap);
                 }, 1000);
             });
             
-            // 定期检查新邮件（仅作为备用，延长间隔）
+            // Periodic check for new emails (backup only, extended interval)
             setInterval(() => {
                 log.debug('Periodic email check...');
                 processNewEmails(imap);
-            }, 120000); // 每2分钟检查一次，减少频率
+            }, 120000); // Check every 2 minutes, reduced frequency
         });
     });
     
     imap.once('error', function(err) {
         log.error({ error: err.message }, 'IMAP error');
-        // 重连机制
+        // Reconnection mechanism
         setTimeout(() => {
             log.info('Attempting to reconnect...');
             startImap();
@@ -556,7 +556,7 @@ function startImap() {
     
     imap.connect();
     
-    // 优雅关闭
+    // Graceful shutdown
     process.on('SIGINT', () => {
         log.info('Shutting down gracefully...');
         imap.end();
@@ -564,9 +564,9 @@ function startImap() {
     });
 }
 
-// 处理现有邮件
+// Process existing emails
 function processExistingEmails(imap) {
-    // 搜索未读邮件
+    // Search unread emails
     imap.search(['UNSEEN'], function(err, results) {
         if (err) {
             log.error({ error: err.message }, 'Failed to search emails');
@@ -583,9 +583,9 @@ function processExistingEmails(imap) {
     });
 }
 
-// 处理新邮件
+// Process new emails
 function processNewEmails(imap) {
-    // 搜索最近5分钟的邮件
+    // Search emails from the last 5 minutes
     const since = new Date();
     since.setMinutes(since.getMinutes() - 5);
     const sinceStr = since.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -603,12 +603,12 @@ function processNewEmails(imap) {
     });
 }
 
-// 获取并处理邮件
+// Fetch and process emails
 function fetchAndProcessEmails(imap, uids) {
     log.debug({ uids }, 'Starting to fetch emails');
     const fetch = imap.fetch(uids, { 
-        bodies: '',  // 获取完整邮件
-        markSeen: true  // 标记为已读
+        bodies: '',  // Get complete email
+        markSeen: true  // Mark as read
     });
     
     fetch.on('message', function(msg, seqno) {
@@ -618,21 +618,21 @@ function fetchAndProcessEmails(imap, uids) {
         let bodyProcessed = false;
         let attributesReceived = false;
         
-        // 获取UID以防重复处理
+        // Get UID to prevent duplicate processing
         msg.once('attributes', function(attrs) {
             messageUid = attrs.uid;
             attributesReceived = true;
             log.debug({ uid: messageUid, seqno }, 'Received attributes');
             
-            // 只检查是否已处理，不要立即标记
+            // Only check if already processed, don't mark immediately
             if (messageUid && PROCESSED_MESSAGES.has(messageUid)) {
                 log.debug({ uid: messageUid, seqno }, 'Message UID already processed, skipping entire message');
                 skipProcessing = true;
-                return; // 直接返回，不继续处理
+                return; // Return directly, do not continue processing
             }
             log.debug({ uid: messageUid, seqno }, 'Message UID ready for processing');
             
-            // 如果body已经处理完了，现在可以解析邮件
+            // If body is processed, can now parse email
             if (bodyProcessed && !skipProcessing) {
                 processEmailBuffer(buffer, messageUid, seqno);
             }
@@ -647,14 +647,14 @@ function fetchAndProcessEmails(imap, uids) {
                 bodyProcessed = true;
                 log.debug({ uid: messageUid, seqno, bufferLength: buffer.length, attributesReceived }, 'Body stream ended');
                 
-                // 如果attributes已经收到且没有标记跳过，现在可以解析邮件
+                // If attributes received and not marked to skip, can now parse email
                 if (attributesReceived && !skipProcessing) {
                     processEmailBuffer(buffer, messageUid, seqno);
                 }
             });
         });
         
-        // 分离出的邮件处理函数
+        // Separated email processing function
         function processEmailBuffer(buffer, uid, seqno) {
             if (buffer.length > 0 && uid) {
                 log.debug({ uid, seqno }, 'Starting email parsing');
@@ -687,7 +687,7 @@ function fetchAndProcessEmails(imap, uids) {
     });
 }
 
-// 启动服务
+// Start service
 if (require.main === module) {
     startImap();
 }

@@ -72,29 +72,29 @@ class CommandRelayService extends EventEmitter {
         }
 
         try {
-            // 验证邮件配置
+            // Validate email configuration
             if (!this.config.imap) {
                 throw new Error('IMAP configuration required for command relay');
             }
 
-            // 启动邮件监听器
+            // Start email listener
             this.emailListener = new EmailListener(this.config);
             
-            // 监听命令事件
+            // Listen for command events
             this.emailListener.on('command', (commandData) => {
                 this._queueCommand(commandData);
             });
 
-            // 启动邮件监听
+            // Start email listening
             await this.emailListener.start();
             
-            // 启动命令处理
+            // Start command processing
             this._startCommandProcessor();
             
             this.isRunning = true;
             this.logger.info('Command relay service started successfully');
             
-            // 发送启动通知
+            // Send startup notification
             this.emit('started');
             
         } catch (error) {
@@ -110,13 +110,13 @@ class CommandRelayService extends EventEmitter {
 
         this.isRunning = false;
 
-        // 停止邮件监听器
+        // Stop email listener
         if (this.emailListener) {
             await this.emailListener.stop();
             this.emailListener = null;
         }
 
-        // 保存状态
+        // Save state
         this._saveState();
 
         this.logger.info('Command relay service stopped');
@@ -146,15 +146,15 @@ class CommandRelayService extends EventEmitter {
     }
 
     _startCommandProcessor() {
-        // 立即处理队列
+        // Process queue immediately
         this._processCommandQueue();
         
-        // 定期处理队列
+        // Process queue periodically
         setInterval(() => {
             if (this.isRunning) {
                 this._processCommandQueue();
             }
-        }, 5000); // 每5秒检查一次
+        }, 5000); // Check every 5 seconds
     }
 
     async _processCommandQueue() {
@@ -190,21 +190,21 @@ class CommandRelayService extends EventEmitter {
         commandItem.executedAt = new Date().toISOString();
 
         try {
-            // 检查Claude Code进程是否运行
+            // Check if Claude Code process is running
             const claudeProcess = await this._findClaudeCodeProcess();
             
             if (!claudeProcess || !claudeProcess.available) {
                 throw new Error('Claude Code not available');
             }
 
-            // 执行命令 - 使用多种方式尝试
+            // Execute command - try multiple methods
             const success = await this._sendCommandToClaudeCode(commandItem.command, claudeProcess, commandItem.sessionId);
             
             if (success) {
                 commandItem.status = 'completed';
                 commandItem.completedAt = new Date().toISOString();
                 
-                // 更新会话命令计数
+                // Update session command count
                 if (this.emailListener) {
                     await this.emailListener.updateSessionCommandCount(commandItem.sessionId);
                 }
@@ -231,7 +231,7 @@ class CommandRelayService extends EventEmitter {
 
     async _findClaudeCodeProcess() {
         return new Promise((resolve) => {
-            // 查找Claude Code相关进程
+            // Find Claude Code related processes
             const ps = spawn('ps', ['aux']);
             let output = '';
 
@@ -252,7 +252,7 @@ class CommandRelayService extends EventEmitter {
                 );
 
                 if (claudeProcesses.length > 0) {
-                    // 解析进程ID
+                    // Parse process ID
                     const processLine = claudeProcesses[0];
                     const parts = processLine.trim().split(/\s+/);
                     const pid = parseInt(parts[1]);
@@ -263,7 +263,7 @@ class CommandRelayService extends EventEmitter {
                         command: processLine
                     });
                 } else {
-                    // 如果没找到进程，假设 Claude Code 可以通过桌面自动化访问
+                    // If no process found, assume Claude Code can be accessed via desktop automation
                     this.logger.debug('No Claude Code process found, will try desktop automation');
                     resolve({ pid: null, available: true });
                 }
@@ -271,7 +271,7 @@ class CommandRelayService extends EventEmitter {
 
             ps.on('error', (error) => {
                 this.logger.error('Error finding Claude Code process:', error.message);
-                // 即使出错，也尝试桌面自动化
+                // Even if error occurs, try desktop automation
                 resolve({ pid: null, available: true });
             });
         });
@@ -280,7 +280,7 @@ class CommandRelayService extends EventEmitter {
     async _sendCommandToClaudeCode(command, claudeProcess, sessionId) {
         return new Promise(async (resolve) => {
             try {
-                // 方法1: Claude Code 专用自动化 (最直接和可靠)
+                // Method 1: Claude Code dedicated automation (most direct and reliable)
                 this.logger.info('Attempting to send command via Claude automation...');
                 const claudeSuccess = await this.claudeAutomation.sendCommand(command, sessionId);
                 
@@ -290,7 +290,7 @@ class CommandRelayService extends EventEmitter {
                     return;
                 }
                 
-                // 方法2: 剪贴板自动化 (需要权限)
+                // Method 2: Clipboard automation (requires permissions)
                 if (this.clipboardAutomation.isSupported()) {
                     this.logger.info('Attempting to send command via clipboard automation...');
                     const clipboardSuccess = await this.clipboardAutomation.sendCommand(command);
@@ -303,7 +303,7 @@ class CommandRelayService extends EventEmitter {
                     this.logger.warn('Clipboard automation failed, trying other methods...');
                 }
                 
-                // 方法3: 简单自动化方案 (包含多种备选方案)
+                // Method 3: Simple automation solution (includes multiple fallback options)
                 this.logger.info('Attempting to send command via simple automation...');
                 const simpleSuccess = await this.simpleAutomation.sendCommand(command, sessionId);
                 
@@ -313,7 +313,7 @@ class CommandRelayService extends EventEmitter {
                     return;
                 }
                 
-                // 方法4: 使用命令桥接器 (文件方式)
+                // Method 4: Use command bridge (file-based approach)
                 this.logger.info('Attempting to send command via bridge...');
                 const bridgeSuccess = await this.commandBridge.sendCommand(command, sessionId);
                 
@@ -323,7 +323,7 @@ class CommandRelayService extends EventEmitter {
                     return;
                 }
                 
-                // 方法5: 发送通知作为最后备选
+                // Method 5: Send notification as final fallback
                 this.logger.info('Using notification as final fallback...');
                 this._sendCommandViaNotification(command)
                     .then((success) => {
@@ -341,14 +341,14 @@ class CommandRelayService extends EventEmitter {
 
     async _sendCommandViaMacOS(command) {
         return new Promise((resolve, reject) => {
-            // 使用AppleScript自动化输入到活动窗口
+            // Use AppleScript automation to input to active window
             const escapedCommand = command.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'");
             const script = `
                 tell application "System Events"
-                    -- 获取当前活动应用
+                    -- Get current active application
                     set activeApp to name of first application process whose frontmost is true
                     
-                    -- 尝试找到 Claude Code、Terminal 或其他开发工具
+                    -- Try to find Claude Code, Terminal or other development tools
                     set targetApps to {"Claude Code", "Terminal", "iTerm2", "iTerm", "Visual Studio Code", "Code"}
                     set foundApp to null
                     
@@ -362,18 +362,18 @@ class CommandRelayService extends EventEmitter {
                     end repeat
                     
                     if foundApp is not null then
-                        -- 切换到目标应用
+                        -- Switch to target application
                         set frontmost of foundApp to true
                         delay 1
                         
-                        -- 发送命令
+                        -- Send command
                         keystroke "${escapedCommand}"
                         delay 0.3
                         keystroke return
                         
                         return "success"
                     else
-                        -- 如果没找到特定应用，尝试当前活动窗口
+                        -- If no specific application found, try current active window
                         keystroke "${escapedCommand}"
                         delay 0.3
                         keystroke return
@@ -411,15 +411,15 @@ class CommandRelayService extends EventEmitter {
     }
 
     async _sendCommandViaNotification(command) {
-        // 作为备选方案，发送桌面通知提醒用户
+        // As fallback option, send desktop notification to remind user
         return new Promise((resolve) => {
             try {
                 const commandPreview = command.length > 50 ? command.substring(0, 50) + '...' : command;
                 
                 if (process.platform === 'darwin') {
-                    // macOS 通知，包含更多信息
+                    // macOS notification with more information
                     const script = `
-                        display notification "命令: ${commandPreview.replace(/"/g, '\\"')}" with title "TaskPing - 邮件命令" subtitle "点击Terminal或Claude Code窗口，然后粘贴命令" sound name "default"
+                        display notification "Command: ${commandPreview.replace(/"/g, '\\"')}" with title "TaskPing - Email Command" subtitle "Click Terminal or Claude Code window, then paste command" sound name "default"
                     `;
                     const notification = spawn('osascript', ['-e', script]);
                     
@@ -432,10 +432,10 @@ class CommandRelayService extends EventEmitter {
                         resolve(false);
                     });
                 } else {
-                    // Linux 通知
+                    // Linux notification
                     const notification = spawn('notify-send', [
-                        'TaskPing - 邮件命令',
-                        `命令: ${commandPreview}`
+                        'TaskPing - Email Command',
+                        `Command: ${commandPreview}`
                     ]);
                     
                     notification.on('close', () => {
@@ -459,12 +459,12 @@ class CommandRelayService extends EventEmitter {
         commandItem.retries = (commandItem.retries || 0) + 1;
         
         if (commandItem.retries < commandItem.maxRetries) {
-            // 重试
+            // Retry
             commandItem.status = 'queued';
-            commandItem.retryAt = new Date(Date.now() + (commandItem.retries * 60000)).toISOString(); // 延迟重试
+            commandItem.retryAt = new Date(Date.now() + (commandItem.retries * 60000)).toISOString(); // Delayed retry
             this.logger.info(`Command ${commandItem.id} will be retried (attempt ${commandItem.retries + 1})`);
         } else {
-            // 达到最大重试次数
+            // Reached maximum retry count
             commandItem.status = 'failed';
             this.logger.error(`Command ${commandItem.id} failed after ${commandItem.retries} retries`);
         }
@@ -494,12 +494,12 @@ class CommandRelayService extends EventEmitter {
         };
     }
 
-    // 手动清理已完成的命令
+    // Manually cleanup completed commands
     cleanupCompletedCommands() {
         const beforeCount = this.commandQueue.length;
         this.commandQueue = this.commandQueue.filter(cmd => 
             cmd.status !== 'completed' || 
-            new Date(cmd.completedAt) > new Date(Date.now() - 24 * 60 * 60 * 1000) // 保留24小时内的记录
+            new Date(cmd.completedAt) > new Date(Date.now() - 24 * 60 * 60 * 1000) // Keep records within 24 hours
         );
         
         const removedCount = beforeCount - this.commandQueue.length;

@@ -30,19 +30,19 @@
   }
 }
 
-# 邮件配置说明
+# Email Configuration Instructions
 # 
-# Gmail 配置示例：
-# 1. 启用两步验证
-# 2. 生成应用密码（16位）
-# 3. 替换上面的 your-email@gmail.com 和 your-app-password
+# Gmail Configuration Example:
+# 1. Enable two-factor authentication
+# 2. Generate app password (16 digits)
+# 3. Replace your-email@gmail.com and your-app-password above
 #
-# 其他邮箱提供商：
-# QQ邮箱: smtp.qq.com (587) / imap.qq.com (993)
-# 163邮箱: smtp.163.com (587) / imap.163.com (993)
+# Other Email Providers:
+# QQ Mail: smtp.qq.com (587) / imap.qq.com (993)
+# 163 Mail: smtp.163.com (587) / imap.163.com (993)
 # Outlook: smtp.live.com (587) / imap-mail.outlook.com (993)
 #
-# 配置完成后：
-# 1. 复制email部分到 config/channels.json
-# 2. 运行: taskping test
-# 3. 运行: taskping relay start
+# After Configuration:
+# 1. Copy email section to config/channels.json
+# 2. Run: taskping test
+# 3. Run: taskping relay start

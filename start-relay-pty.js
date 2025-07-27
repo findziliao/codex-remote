@@ -1,123 +1,123 @@
 #!/usr/bin/env node
 
 /**
- * TaskPing PTY Relay 启动脚本
- * 启动基于 node-pty 的邮件命令中继服务
+ * TaskPing PTY Relay Startup Script
+ * Start node-pty based email command relay service
  */
 
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-// 检查环境配置
+// Check environment configuration
 function checkConfig() {
     const envPath = path.join(__dirname, '.env');
     
     if (!fs.existsSync(envPath)) {
-        console.error('❌ 错误: 未找到 .env 配置文件');
-        console.log('\n请先复制 .env.example 到 .env 并配置您的邮件信息:');
+        console.error('❌ Error: .env configuration file not found');
+        console.log('\nPlease first copy .env.example to .env and configure your email information:');
         console.log('  cp .env.example .env');
-        console.log('  然后编辑 .env 文件填入您的邮件配置\n');
+        console.log('  Then edit .env file to fill in your email configuration\n');
         process.exit(1);
     }
     
-    // 加载环境变量
+    // Load environment variables
     require('dotenv').config();
     
-    // 检查必需的配置
+    // Check required configuration
     const required = ['IMAP_HOST', 'IMAP_USER', 'IMAP_PASS'];
     const missing = required.filter(key => !process.env[key]);
     
     if (missing.length > 0) {
-        console.error('❌ 错误: 缺少必需的环境变量:');
+        console.error('❌ Error: Missing required environment variables:');
         missing.forEach(key => console.log(`  - ${key}`));
-        console.log('\n请编辑 .env 文件并填入所有必需的配置\n');
+        console.log('\nPlease edit .env file and fill in all required configurations\n');
         process.exit(1);
     }
     
-    console.log('✅ 配置检查通过');
-    console.log(`📧 IMAP服务器: ${process.env.IMAP_HOST}`);
-    console.log(`👤 邮件账号: ${process.env.IMAP_USER}`);
-    console.log(`🔒 白名单发件人: ${process.env.ALLOWED_SENDERS || '(未设置，将接受所有邮件)'}`);
-    console.log(`💾 会话存储路径: ${process.env.SESSION_MAP_PATH || '(使用默认路径)'}`);
+    console.log('✅ Configuration check passed');
+    console.log(`📧 IMAP server: ${process.env.IMAP_HOST}`);
+    console.log(`👤 Email account: ${process.env.IMAP_USER}`);
+    console.log(`🔒 Whitelist senders: ${process.env.ALLOWED_SENDERS || '(Not set, will accept all emails)'}`);
+    console.log(`💾 Session storage path: ${process.env.SESSION_MAP_PATH || '(Using default path)'}`);
     console.log('');
 }
 
-// 创建会话示例
+// Create example session
 function createExampleSession() {
     const sessionMapPath = process.env.SESSION_MAP_PATH || path.join(__dirname, 'src/data/session-map.json');
     const sessionDir = path.dirname(sessionMapPath);
     
-    // 确保目录存在
+    // Ensure directory exists
     if (!fs.existsSync(sessionDir)) {
         fs.mkdirSync(sessionDir, { recursive: true });
     }
     
-    // 如果会话文件不存在，创建一个示例
+    // If session file doesn't exist, create an example
     if (!fs.existsSync(sessionMapPath)) {
         const exampleToken = 'TEST123';
         const exampleSession = {
             [exampleToken]: {
                 type: 'pty',
                 createdAt: Math.floor(Date.now() / 1000),
-                expiresAt: Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000), // 24小时后过期
+                expiresAt: Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000), // Expires after 24 hours
                 cwd: process.cwd(),
-                description: '测试会话 - 发送邮件时主题包含 [TaskPing #TEST123]'
+                description: 'Test session - Include [TaskPing #TEST123] in email subject when sending'
             }
         };
         
         fs.writeFileSync(sessionMapPath, JSON.stringify(exampleSession, null, 2));
-        console.log(`📝 已创建示例会话文件: ${sessionMapPath}`);
-        console.log(`🔑 测试Token: ${exampleToken}`);
-        console.log('   发送测试邮件时，主题中包含: [TaskPing #TEST123]');
+        console.log(`📝 Created example session file: ${sessionMapPath}`);
+        console.log(`🔑 Test Token: ${exampleToken}`);
+        console.log('   When sending test email, include in subject: [TaskPing #TEST123]');
         console.log('');
     }
 }
 
-// PID文件路径
+// PID file path
 const PID_FILE = path.join(__dirname, 'relay-pty.pid');
 
-// 检查是否已有实例在运行
+// Check if an instance is already running
 function checkSingleInstance() {
     if (fs.existsSync(PID_FILE)) {
         try {
             const oldPid = parseInt(fs.readFileSync(PID_FILE, 'utf8'));
-            // 检查进程是否真的在运行
+            // Check if process is actually running
             process.kill(oldPid, 0);
-            // 如果没有抛出错误，说明进程还在运行
-            console.error('❌ 错误: relay-pty 服务已经在运行中 (PID: ' + oldPid + ')');
-            console.log('\n如果您确定服务没有运行，可以删除 PID 文件:');
+            // If no error thrown, process is still running
+            console.error('❌ Error: relay-pty service is already running (PID: ' + oldPid + ')');
+            console.log('\nIf you\'re sure the service is not running, you can delete the PID file:');
             console.log('  rm ' + PID_FILE);
-            console.log('\n或停止现有服务:');
+            console.log('\nOr stop existing service:');
             console.log('  kill ' + oldPid);
             process.exit(1);
         } catch (err) {
-            // 进程不存在，删除旧的 PID 文件
+            // Process doesn't exist, delete old PID file
             fs.unlinkSync(PID_FILE);
         }
     }
     
-    // 写入当前进程的 PID
+    // Write current process PID
     fs.writeFileSync(PID_FILE, process.pid.toString());
 }
 
-// 清理 PID 文件
+// Clean up PID file
 function cleanupPidFile() {
     if (fs.existsSync(PID_FILE)) {
         fs.unlinkSync(PID_FILE);
     }
 }
 
-// 启动服务
+// Start service
 function startService() {
-    // 检查单实例
+    // Check single instance
     checkSingleInstance();
     
-    console.log('🚀 正在启动 TaskPing PTY Relay 服务...\n');
+    console.log('🚀 Starting TaskPing PTY Relay service...\n');
     
     const relayPath = path.join(__dirname, 'src/relay/relay-pty.js');
     
-    // 使用 node 直接运行，这样可以看到完整的日志输出
+    // Use node to run directly, so we can see complete log output
     const relay = spawn('node', [relayPath], {
         stdio: 'inherit',
         env: {
@@ -126,9 +126,9 @@ function startService() {
         }
     });
     
-    // 处理退出
+    // Handle exit
     process.on('SIGINT', () => {
-        console.log('\n⏹️  正在停止服务...');
+        console.log('\n⏹️  Stopping service...');
         relay.kill('SIGINT');
         cleanupPidFile();
         process.exit(0);
@@ -138,7 +138,7 @@ function startService() {
     process.on('SIGTERM', cleanupPidFile);
     
     relay.on('error', (error) => {
-        console.error('❌ 启动失败:', error.message);
+        console.error('❌ Startup failed:', error.message);
         cleanupPidFile();
         process.exit(1);
     });
@@ -146,50 +146,50 @@ function startService() {
     relay.on('exit', (code, signal) => {
         cleanupPidFile();
         if (signal) {
-            console.log(`\n服务已停止 (信号: ${signal})`);
+            console.log(`\nService stopped (signal: ${signal})`);
         } else if (code !== 0) {
-            console.error(`\n服务异常退出 (代码: ${code})`);
+            console.error(`\nService exited abnormally (code: ${code})`);
             process.exit(code);
         }
     });
 }
 
-// 显示使用说明
+// Show usage instructions
 function showInstructions() {
-    console.log('📖 使用说明:');
-    console.log('1. 在 Claude Code 中执行任务时，会发送包含 Token 的提醒邮件');
-    console.log('2. 回复该邮件，内容为要执行的命令');
-    console.log('3. 支持的命令格式:');
-    console.log('   - 直接输入命令文本');
-    console.log('   - 使用 CMD: 前缀，如 "CMD: 继续"');
-    console.log('   - 使用代码块包裹，如:');
+    console.log('📖 Usage instructions:');
+    console.log('1. When executing tasks in Claude Code, reminder emails containing Token will be sent');
+    console.log('2. Reply to that email with the commands to execute');
+    console.log('3. Supported command formats:');
+    console.log('   - Enter command text directly');
+    console.log('   - Use CMD: prefix, like "CMD: continue"');
+    console.log('   - Use code block wrapping, like:');
     console.log('     ```');
-    console.log('     你的命令');
+    console.log('     your command');
     console.log('     ```');
-    console.log('4. 系统会自动提取命令并注入到对应的 Claude Code 会话中');
-    console.log('\n⌨️  按 Ctrl+C 停止服务\n');
+    console.log('4. System will automatically extract commands and inject them into corresponding Claude Code session');
+    console.log('\n⌨️  Press Ctrl+C to stop service\n');
     console.log('━'.repeat(60) + '\n');
 }
 
-// 主函数
+// Main function
 function main() {
     console.log('╔══════════════════════════════════════════════════════════╗');
     console.log('║             TaskPing PTY Relay Service                    ║');
-    console.log('║      邮件命令中继服务 - 基于 node-pty 的 PTY 模式          ║');
+    console.log('║      Email Command Relay Service - node-pty based PTY mode          ║');
     console.log('╚══════════════════════════════════════════════════════════╝\n');
     
-    // 检查配置
+    // Check configuration
     checkConfig();
     
-    // 创建示例会话
+    // Create example session
     createExampleSession();
     
-    // 显示使用说明
+    // Show usage instructions
     showInstructions();
     
-    // 启动服务
+    // Start service
     startService();
 }
 
-// 运行
+// Run
 main();

@@ -26,7 +26,7 @@
           "pass": "kKgS3tNReRTL3RQC"
         }
       },
-      "from": "TaskPing 通知系统 <noreply@pandalla.ai>",
+      "from": "TaskPing Notification System <noreply@pandalla.ai>",
       "to": "jiaxicui446@gmail.com",
       "template": {
         "checkInterval": 30

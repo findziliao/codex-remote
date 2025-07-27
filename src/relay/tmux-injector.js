@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * tmux命令注入器 - 无人值守远程控制解决方案
+ * Tmux Command Injector - Unattended remote control solution
  */
 
 const { exec } = require('child_process');
@@ -23,7 +23,7 @@ class TmuxInjector {
         }
     }
     
-    // 检查tmux是否安装
+    // Check if tmux is installed
     async checkTmuxAvailable() {
         return new Promise((resolve) => {
             exec('which tmux', (error) => {
@@ -32,7 +32,7 @@ class TmuxInjector {
         });
     }
     
-    // 检查Claude tmux会话是否存在
+    // Check if Claude tmux session exists
     async checkClaudeSession() {
         return new Promise((resolve) => {
             exec(`tmux has-session -t ${this.sessionName} 2>/dev/null`, (error) => {
@@ -41,10 +41,10 @@ class TmuxInjector {
         });
     }
     
-    // 创建Claude tmux会话
+    // Create Claude tmux session
     async createClaudeSession() {
         return new Promise((resolve) => {
-            // 使用clauderun命令启动Claude（不预填充任何命令）
+            // Use clauderun command to start Claude (without pre-filling any commands)
             const command = `tmux new-session -d -s ${this.sessionName} -c "${process.cwd()}" clauderun`;
             
             this.log.info(`Creating tmux session with clauderun command: ${command}`);
@@ -52,7 +52,7 @@ class TmuxInjector {
             exec(command, (error, stdout, stderr) => {
                 if (error) {
                     this.log.warn(`Failed to create tmux session with clauderun: ${error.message}`);
-                    // 如果clauderun失败，尝试使用完整路径命令
+                    // If clauderun fails, try using full path command
                     this.log.info('Fallback to full path command...');
                     const fallbackCommand = `tmux new-session -d -s ${this.sessionName} -c "${process.cwd()}" /Users/jessytsui/.nvm/versions/node/v18.17.0/bin/claude --dangerously-skip-permissions`;
                     
@@ -69,7 +69,7 @@ class TmuxInjector {
                     });
                 } else {
                     this.log.info('Tmux Claude session created successfully (clauderun)');
-                    // 等待Claude初始化
+                    // Wait for Claude initialization
                     setTimeout(() => {
                         resolve({ success: true });
                     }, 3000);
@@ -78,18 +78,18 @@ class TmuxInjector {
         });
     }
     
-    // 向tmux会话注入命令（智能处理Claude确认）
+    // Inject command into tmux session (intelligently handle Claude confirmations)
     async injectCommand(command) {
         return new Promise(async (resolve) => {
             try {
-                // 1. 清空输入框
+                // 1. Clear input field
                 const clearCommand = `tmux send-keys -t ${this.sessionName} C-u`;
                 
-                // 2. 发送命令
+                // 2. Send command
                 const escapedCommand = command.replace(/'/g, "'\"'\"'");
                 const sendCommand = `tmux send-keys -t ${this.sessionName} '${escapedCommand}'`;
                 
-                // 3. 发送回车
+                // 3. Send enter
                 const enterCommand = `tmux send-keys -t ${this.sessionName} C-m`;
                 
                 this.log.info(`Injecting command via tmux: ${command}`);
@@ -97,7 +97,7 @@ class TmuxInjector {
                 this.log.info(`Step 2 - Send: ${sendCommand}`);
                 this.log.info(`Step 3 - Enter: ${enterCommand}`);
                 
-                // 执行三个步骤
+                // Execute three steps
                 exec(clearCommand, (clearError) => {
                     if (clearError) {
                         this.log.error(`Failed to clear input: ${clearError.message}`);
@@ -105,7 +105,7 @@ class TmuxInjector {
                         return;
                     }
                     
-                    // 短暂等待
+                    // Brief wait
                     setTimeout(() => {
                         exec(sendCommand, (sendError) => {
                             if (sendError) {
@@ -114,7 +114,7 @@ class TmuxInjector {
                                 return;
                             }
                             
-                            // 短暂等待
+                            // Brief wait
                             setTimeout(() => {
                                 exec(enterCommand, async (enterError) => {
                                     if (enterError) {
@@ -125,19 +125,19 @@ class TmuxInjector {
                                     
                                     this.log.info('Command sent successfully in 3 steps');
                                     
-                                    // 短暂等待命令发送
+                                    // Brief wait for command sending
                                     await new Promise(r => setTimeout(r, 1000));
                                     
-                                    // 检查命令是否已在Claude中显示
+                                    // Check if command is already displayed in Claude
                                     const capture = await this.getCaptureOutput();
                                     if (capture.success) {
                                         this.log.info(`Claude state after injection: ${capture.output.slice(-200).replace(/\n/g, ' ')}`);
                                     }
                                     
-                                    // 等待并检查是否需要确认
+                                    // Wait and check if confirmation is needed
                                     await this.handleConfirmations();
                                     
-                                    // 记录注入日志
+                                    // Record injection log
                                     this.logInjection(command);
                                     
                                     resolve({ success: true });
@@ -153,7 +153,7 @@ class TmuxInjector {
         });
     }
     
-    // 自动处理Claude的确认对话框
+    // Automatically handle Claude confirmation dialogs
     async handleConfirmations() {
         const maxAttempts = 8;
         let attempts = 0;
@@ -161,10 +161,10 @@ class TmuxInjector {
         while (attempts < maxAttempts) {
             attempts++;
             
-            // 等待Claude处理
+            // Wait for Claude processing
             await new Promise(resolve => setTimeout(resolve, 1500));
             
-            // 获取当前屏幕内容
+            // Get current screen content
             const capture = await this.getCaptureOutput();
             
             if (!capture.success) {
@@ -174,20 +174,20 @@ class TmuxInjector {
             const output = capture.output;
             this.log.info(`Confirmation check ${attempts}: ${output.slice(-200).replace(/\n/g, ' ')}`);
             
-            // 检查是否有多选项确认对话框（优先处理）
+            // Check for multi-option confirmation dialog (priority handling)
             if (output.includes('Do you want to proceed?') && 
                 (output.includes('1. Yes') || output.includes('2. Yes, and don\'t ask again'))) {
                 
                 this.log.info(`Detected multi-option confirmation, selecting option 2 (attempt ${attempts})`);
                 
-                // 选择"2. Yes, and don't ask again"以避免未来的确认对话框
+                // Select "2. Yes, and don't ask again" to avoid future confirmation dialogs
                 await new Promise((resolve) => {
                     exec(`tmux send-keys -t ${this.sessionName} '2'`, (error) => {
                         if (error) {
                             this.log.warn('Failed to send option 2');
                         } else {
                             this.log.info('Auto-confirmation sent (option 2)');
-                            // 发送Enter键
+                            // Send Enter key
                             setTimeout(() => {
                                 exec(`tmux send-keys -t ${this.sessionName} 'Enter'`, (enterError) => {
                                     if (enterError) {
@@ -202,12 +202,12 @@ class TmuxInjector {
                     });
                 });
                 
-                // 等待确认生效
+                // Wait for confirmation to take effect
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 continue;
             }
             
-            // 检查是否有单选项确认
+            // Check for single option confirmation
             if (output.includes('❯ 1. Yes') || output.includes('▷ 1. Yes')) {
                 this.log.info(`Detected single option confirmation, selecting option 1 (attempt ${attempts})`);
                 
@@ -217,7 +217,7 @@ class TmuxInjector {
                             this.log.warn('Failed to send option 1');
                         } else {
                             this.log.info('Auto-confirmation sent (option 1)');
-                            // 发送Enter键
+                            // Send Enter key
                             setTimeout(() => {
                                 exec(`tmux send-keys -t ${this.sessionName} 'Enter'`, (enterError) => {
                                     if (enterError) {
@@ -235,7 +235,7 @@ class TmuxInjector {
                 continue;
             }
             
-            // 检查是否有简单的Y/N确认
+            // Check for simple Y/N confirmation
             if (output.includes('(y/n)') || output.includes('[Y/n]') || output.includes('[y/N]')) {
                 this.log.info(`Detected y/n prompt, sending 'y' (attempt ${attempts})`);
                 
@@ -245,7 +245,7 @@ class TmuxInjector {
                             this.log.warn('Failed to send y');
                         } else {
                             this.log.info('Auto-confirmation sent (y)');
-                            // 发送Enter键
+                            // Send Enter key
                             setTimeout(() => {
                                 exec(`tmux send-keys -t ${this.sessionName} 'Enter'`, (enterError) => {
                                     if (enterError) {
@@ -263,7 +263,7 @@ class TmuxInjector {
                 continue;
             }
             
-            // 检查是否有按Enter继续的提示
+            // Check for press Enter to continue prompts
             if (output.includes('Press Enter to continue') || 
                 output.includes('Enter to confirm') || 
                 output.includes('Press Enter')) {
@@ -283,7 +283,7 @@ class TmuxInjector {
                 continue;
             }
             
-            // 检查是否命令正在执行
+            // Check if command is currently executing
             if (output.includes('Clauding…') || 
                 output.includes('Waiting…') || 
                 output.includes('Processing…') ||
@@ -292,7 +292,7 @@ class TmuxInjector {
                 continue;
             }
             
-            // 检查是否有新的空输入框（表示完成）
+            // Check for new empty input box (indicates completion)
             if ((output.includes('│ >') || output.includes('> ')) && 
                 !output.includes('Do you want to proceed?') &&
                 !output.includes('1. Yes') &&
@@ -301,13 +301,13 @@ class TmuxInjector {
                 break;
             }
             
-            // 检查是否有错误信息
+            // Check for error messages
             if (output.includes('Error:') || output.includes('error:') || output.includes('failed')) {
                 this.log.warn('Detected error in output, stopping confirmation attempts');
                 break;
             }
             
-            // 如果什么都没检测到，等待更长时间再检查
+            // If nothing detected, wait longer before checking again
             if (attempts < maxAttempts) {
                 this.log.info('No confirmation prompts detected, waiting longer...');
                 await new Promise(resolve => setTimeout(resolve, 2000));
@@ -316,14 +316,14 @@ class TmuxInjector {
         
         this.log.info(`Confirmation handling completed after ${attempts} attempts`);
         
-        // 最终状态检查
+        // Final state check
         const finalCapture = await this.getCaptureOutput();
         if (finalCapture.success) {
             this.log.info(`Final state: ${finalCapture.output.slice(-100).replace(/\n/g, ' ')}`);
         }
     }
     
-    // 获取tmux会话输出
+    // Get tmux session output
     async getCaptureOutput() {
         return new Promise((resolve) => {
             const command = `tmux capture-pane -t ${this.sessionName} -p`;
@@ -338,35 +338,35 @@ class TmuxInjector {
         });
     }
     
-    // 重启Claude会话
+    // Restart Claude session
     async restartClaudeSession() {
         return new Promise(async (resolve) => {
             this.log.info('Restarting Claude tmux session...');
             
-            // 杀死现有会话
+            // Kill existing session
             exec(`tmux kill-session -t ${this.sessionName} 2>/dev/null`, async () => {
-                // 等待一下
+                // Wait a moment
                 await new Promise(r => setTimeout(r, 1000));
                 
-                // 创建新会话
+                // Create new session
                 const result = await this.createClaudeSession();
                 resolve(result);
             });
         });
     }
     
-    // 完整的命令注入流程
+    // Complete command injection workflow
     async injectCommandFull(token, command) {
         try {
-            this.log.info(`🎯 开始tmux命令注入 (Token: ${token})`);
+            this.log.info(`🎯 Starting tmux command injection (Token: ${token})`);
             
-            // 1. 检查tmux是否可用
+            // 1. Check if tmux is available
             const tmuxAvailable = await this.checkTmuxAvailable();
             if (!tmuxAvailable) {
-                return { success: false, error: 'tmux_not_installed', message: '需要安装tmux: brew install tmux' };
+                return { success: false, error: 'tmux_not_installed', message: 'Need to install tmux: brew install tmux' };
             }
             
-            // 2. 检查Claude会话是否存在
+            // 2. Check if Claude session exists
             const sessionExists = await this.checkClaudeSession();
             
             if (!sessionExists) {
@@ -378,16 +378,16 @@ class TmuxInjector {
                 }
             }
             
-            // 3. 注入命令
+            // 3. Inject command
             const injectResult = await this.injectCommand(command);
             
             if (injectResult.success) {
-                // 4. 发送成功通知
+                // 4. Send success notification
                 await this.sendSuccessNotification(command);
                 
                 return { 
                     success: true, 
-                    message: '命令已成功注入到Claude tmux会话',
+                    message: 'Command successfully injected into Claude tmux session',
                     session: this.sessionName 
                 };
             } else {
@@ -404,11 +404,11 @@ class TmuxInjector {
         }
     }
     
-    // 发送成功通知
+    // Send success notification
     async sendSuccessNotification(command) {
         const shortCommand = command.length > 30 ? command.substring(0, 30) + '...' : command;
         const notificationScript = `
-            display notification "🎉 命令已自动注入到Claude！无需手动操作" with title "TaskPing 远程控制成功" subtitle "${shortCommand.replace(/"/g, '\\"')}" sound name "Glass"
+            display notification "🎉 Command automatically injected into Claude! No manual operation needed" with title "TaskPing Remote Control Success" subtitle "${shortCommand.replace(/"/g, '\\"')}" sound name "Glass"
         `;
         
         exec(`osascript -e '${notificationScript}'`, (error) => {
@@ -420,7 +420,7 @@ class TmuxInjector {
         });
     }
     
-    // 记录注入日志
+    // Record injection log
     logInjection(command) {
         const logEntry = {
             timestamp: new Date().toISOString(),
@@ -438,7 +438,7 @@ class TmuxInjector {
         }
     }
     
-    // 获取会话状态信息
+    // Get session status information
     async getSessionInfo() {
         return new Promise((resolve) => {
             const command = `tmux list-sessions | grep ${this.sessionName}`;

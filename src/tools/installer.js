@@ -50,20 +50,20 @@ class Installer {
     }
 
     async run(args = []) {
-        console.log('=== TaskPing Claude Code 安装器 ===\n');
+        console.log('=== TaskPing Claude Code Installer ===\n');
 
         // Check dependencies
         if (!this.checkDependencies()) {
-            console.log('\n请先安装必要的依赖');
+            console.log('\nPlease install required dependencies first');
             this.rl.close();
             return;
         }
 
-        console.log(`\nClaude Code 配置目录: ${this.claudeConfigDir}`);
+        console.log(`\nClaude Code configuration directory: ${this.claudeConfigDir}`);
         
-        const proceed = await this.question('\n继续安装? (y/n): ');
+        const proceed = await this.question('\nContinue with installation? (y/n): ');
         if (proceed.toLowerCase() !== 'y' && proceed.toLowerCase() !== 'yes') {
-            console.log('安装已取消');
+            console.log('Installation cancelled');
             this.rl.close();
             return;
         }
@@ -79,7 +79,7 @@ class Installer {
         await this.initializeConfig();
 
         // Test installation
-        const testChoice = await this.question('\n测试安装? (y/n): ');
+        const testChoice = await this.question('\nTest installation? (y/n): ');
         if (testChoice.toLowerCase() === 'y' || testChoice.toLowerCase() === 'yes') {
             await this.testInstallation();
         }
@@ -89,14 +89,14 @@ class Installer {
     }
 
     checkDependencies() {
-        console.log('检查依赖...');
+        console.log('Checking dependencies...');
         
         // Check Node.js
         try {
             const nodeVersion = process.version;
             console.log(`✅ Node.js ${nodeVersion}`);
         } catch (error) {
-            console.log('❌ Node.js 未安装');
+            console.log('❌ Node.js not installed');
             return false;
         }
 
@@ -104,16 +104,16 @@ class Installer {
         const platform = process.platform;
         switch (platform) {
             case 'darwin':
-                console.log('✅ macOS 通知支持');
+                console.log('✅ macOS notification support');
                 break;
             case 'linux':
-                console.log('ℹ️  Linux 系统，请确保安装 libnotify-bin');
+                console.log('ℹ️  Linux system, please ensure libnotify-bin is installed');
                 break;
             case 'win32':
-                console.log('✅ Windows 通知支持');
+                console.log('✅ Windows notification support');
                 break;
             default:
-                console.log(`⚠️  平台 ${platform} 可能不完全支持`);
+                console.log(`⚠️  Platform ${platform} may not be fully supported`);
         }
 
         return true;
@@ -153,12 +153,12 @@ class Installer {
     }
 
     async installHooks() {
-        console.log('\n安装 Claude Code hooks...');
+        console.log('\nInstalling Claude Code hooks...');
         
         // Create config directory if it doesn't exist
         if (!fs.existsSync(this.claudeConfigDir)) {
             fs.mkdirSync(this.claudeConfigDir, { recursive: true });
-            console.log(`✅ 创建配置目录: ${this.claudeConfigDir}`);
+            console.log(`✅ Created configuration directory: ${this.claudeConfigDir}`);
         }
 
         const settingsPath = path.join(this.claudeConfigDir, 'settings.json');
@@ -169,9 +169,9 @@ class Installer {
             try {
                 const content = fs.readFileSync(settingsPath, 'utf8');
                 settings = JSON.parse(content);
-                console.log('✅ 读取现有 Claude Code 设置');
+                console.log('✅ Loaded existing Claude Code settings');
             } catch (error) {
-                console.log('⚠️  无法解析现有设置，将创建新的配置');
+                console.log('⚠️  Unable to parse existing settings, will create new configuration');
             }
         }
 
@@ -187,61 +187,61 @@ class Installer {
         // Save updated settings
         try {
             fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-            console.log(`✅ Claude Code hooks 已安装到: ${settingsPath}`);
+            console.log(`✅ Claude Code hooks installed to: ${settingsPath}`);
             return true;
         } catch (error) {
-            console.error(`❌ 安装失败: ${error.message}`);
+            console.error(`❌ Installation failed: ${error.message}`);
             return false;
         }
     }
 
     async initializeConfig() {
-        console.log('\n初始化配置...');
+        console.log('\nInitializing configuration...');
         
         // Load and save default configuration
         this.config.load();
         this.config.save();
         
-        console.log('✅ 配置文件已初始化');
+        console.log('✅ Configuration file initialized');
     }
 
     async testInstallation() {
-        console.log('\n测试安装...');
+        console.log('\nTesting installation...');
         
         try {
             const TaskPingCLI = require('../../taskping');
             const cli = new TaskPingCLI();
             await cli.init();
             
-            console.log('测试任务完成通知...');
+            console.log('Testing task completion notification...');
             await cli.handleNotify(['--type', 'completed']);
             
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            console.log('测试等待输入通知...');
+            console.log('Testing waiting input notification...');
             await cli.handleNotify(['--type', 'waiting']);
             
-            console.log('✅ 测试成功！');
+            console.log('✅ Test successful!');
             return true;
         } catch (error) {
-            console.error(`❌ 测试失败: ${error.message}`);
+            console.error(`❌ Test failed: ${error.message}`);
             return false;
         }
     }
 
     displayUsage() {
-        console.log('\n=== 安装完成 ===');
+        console.log('\n=== Installation Complete ===');
         console.log('');
-        console.log('现在当您使用 Claude Code 时：');
-        console.log('• 任务完成时会收到通知');
-        console.log('• Claude 等待输入时会收到提醒');
+        console.log('Now when you use Claude Code:');
+        console.log('• You will receive notifications when tasks are completed');
+        console.log('• You will receive reminders when Claude is waiting for input');
         console.log('');
-        console.log('常用命令：');
+        console.log('Common commands:');
         console.log(`  node "${path.join(this.projectDir, 'taskping.js')}" config`);
         console.log(`  node "${path.join(this.projectDir, 'taskping.js')}" test`);
         console.log(`  node "${path.join(this.projectDir, 'taskping.js')}" status`);
         console.log('');
-        console.log('如需卸载，请手动删除 Claude Code 设置中的 hooks 配置。');
+        console.log('To uninstall, manually delete the hooks configuration from Claude Code settings.');
     }
 }
 

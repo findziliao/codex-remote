@@ -19,7 +19,7 @@ class EmailListener extends EventEmitter {
         this.isConnected = false;
         this.isListening = false;
         this.sessionsDir = path.join(__dirname, '../data/sessions');
-        this.checkInterval = (config.template?.checkInterval || 30) * 1000; // 转换为毫秒
+        this.checkInterval = (config.template?.checkInterval || 30) * 1000; // Convert to milliseconds
         this.lastCheckTime = new Date();
         
         this._ensureDirectories();
@@ -98,7 +98,7 @@ class EmailListener extends EventEmitter {
     }
 
     _startListening() {
-        // 定期检查新邮件
+        // Periodically check for new emails
         this._checkNewMails();
         setInterval(() => {
             if (this.isListening && this.isConnected) {
@@ -114,7 +114,7 @@ class EmailListener extends EventEmitter {
         } catch (error) {
             this.logger.error('Error checking emails:', error.message);
             
-            // 如果连接断开，尝试重连
+            // If connection is lost, try to reconnect
             if (!this.isConnected) {
                 this.logger.info('Attempting to reconnect...');
                 try {
@@ -140,7 +140,7 @@ class EmailListener extends EventEmitter {
 
     async _searchAndProcessMails() {
         return new Promise((resolve, reject) => {
-            // 搜索最近的未读邮件
+            // Search for recent unread emails
             const searchCriteria = [
                 'UNSEEN',
                 ['SINCE', this.lastCheckTime]
@@ -213,40 +213,40 @@ class EmailListener extends EventEmitter {
 
     async _handleParsedEmail(email, seqno) {
         try {
-            // 检查是否是回复邮件
+            // Check if it's a reply email
             if (!this._isReplyEmail(email)) {
                 this.logger.debug(`Email ${seqno} is not a TaskPing reply`);
                 return;
             }
 
-            // 提取会话ID
+            // Extract session ID
             const sessionId = this._extractSessionId(email);
             if (!sessionId) {
                 this.logger.warn(`No session ID found in email ${seqno}`);
                 return;
             }
 
-            // 验证会话
+            // Validate session
             const session = await this._validateSession(sessionId);
             if (!session) {
                 this.logger.warn(`Invalid session ID in email ${seqno}: ${sessionId}`);
                 return;
             }
 
-            // 提取命令
+            // Extract command
             const command = this._extractCommand(email);
             if (!command) {
                 this.logger.warn(`No command found in email ${seqno}`);
                 return;
             }
 
-            // 安全检查
+            // Security check
             if (!this._isCommandSafe(command)) {
                 this.logger.warn(`Unsafe command in email ${seqno}: ${command}`);
                 return;
             }
 
-            // 发出命令事件
+            // Emit command event
             this.emit('command', {
                 sessionId,
                 command: command.trim(),
@@ -270,40 +270,40 @@ class EmailListener extends EventEmitter {
     }
 
     _isReplyEmail(email) {
-        // 检查主题是否包含 TaskPing 标识
+        // Check if subject contains TaskPing identifier
         const subject = email.subject || '';
         if (!subject.includes('[TaskPing]')) {
             return false;
         }
 
-        // 检查是否是回复 (Re: 或 RE:)
-        const isReply = /^(Re:|RE:|回复:)/i.test(subject);
+        // Check if it's a reply (Re: or RE:)
+        const isReply = /^(Re:|RE:|Reply:)/i.test(subject);
         if (isReply) {
             return true;
         }
 
-        // 检查邮件头中是否有会话ID
+        // Check if session ID exists in email headers
         const sessionId = this._extractSessionId(email);
         return !!sessionId;
     }
 
     _extractSessionId(email) {
-        // 从邮件头中提取
+        // Extract from email headers
         const headers = email.headers;
         if (headers && headers.get('x-taskping-session-id')) {
             return headers.get('x-taskping-session-id');
         }
 
-        // 从邮件正文中提取 (作为备用方案)
+        // Extract from email body (as backup method)
         const text = email.text || '';
-        const sessionMatch = text.match(/会话ID:\s*([a-f0-9-]{36})/i);
+        const sessionMatch = text.match(/Session ID:\s*([a-f0-9-]{36})/i);
         if (sessionMatch) {
             return sessionMatch[1];
         }
 
-        // 从引用的邮件中提取
+        // Extract from quoted email
         const html = email.html || '';
-        const htmlSessionMatch = html.match(/会话ID:\s*<code>([a-f0-9-]{36})<\/code>/i);
+        const htmlSessionMatch = html.match(/Session ID:\s*<code>([a-f0-9-]{36})<\/code>/i);
         if (htmlSessionMatch) {
             return htmlSessionMatch[1];
         }
@@ -321,18 +321,18 @@ class EmailListener extends EventEmitter {
         try {
             const sessionData = JSON.parse(fs.readFileSync(sessionFile, 'utf8'));
             
-            // 检查会话是否过期
+            // Check if session has expired
             const now = new Date();
             const expires = new Date(sessionData.expires);
             
             if (now > expires) {
                 this.logger.debug(`Session ${sessionId} has expired`);
-                // 删除过期会话
+                // Delete expired session
                 fs.unlinkSync(sessionFile);
                 return null;
             }
 
-            // 检查命令数量限制
+            // Check command count limit
             if (sessionData.commandCount >= sessionData.maxCommands) {
                 this.logger.debug(`Session ${sessionId} has reached command limit`);
                 return null;
@@ -348,37 +348,37 @@ class EmailListener extends EventEmitter {
     _extractCommand(email) {
         let text = email.text || '';
         
-        // 移除邮件签名和引用内容
+        // Remove email signature and quoted content
         text = this._cleanEmailContent(text);
         
-        // 移除空行和多余的空白字符
+        // Remove empty lines and excess whitespace
         text = text.replace(/\n\s*\n/g, '\n').trim();
         
         return text;
     }
 
     _cleanEmailContent(text) {
-        // 移除常见的邮件引用标记
+        // Remove common email quote markers
         const lines = text.split('\n');
         const cleanLines = [];
         let foundOriginalMessage = false;
         
         for (const line of lines) {
-            // 检查是否到达原始邮件开始
+            // Check if reached original email start
             if (line.includes('-----Original Message-----') ||
                 line.includes('--- Original Message ---') ||
-                line.includes('在') && line.includes('写道:') ||
+                line.includes('at') && line.includes('wrote:') ||
                 line.includes('On') && line.includes('wrote:') ||
-                line.match(/^>\s*/) ||  // 引用标记
-                line.includes('会话ID:')) {
+                line.match(/^>\s*/) ||  // Quote marker
+                line.includes('Session ID:')) {
                 foundOriginalMessage = true;
                 break;
             }
             
-            // 跳过常见的邮件签名
+            // Skip common email signatures
             if (line.includes('--') || 
                 line.includes('Sent from') ||
-                line.includes('发自我的')) {
+                line.includes('Sent from my')) {
                 break;
             }
             
@@ -389,12 +389,12 @@ class EmailListener extends EventEmitter {
     }
 
     _isCommandSafe(command) {
-        // 基本安全检查
+        // Basic security check
         if (command.length > 1000) {
             return false;
         }
 
-        // 危险命令黑名单
+        // Dangerous command blacklist
         const dangerousPatterns = [
             /rm\s+-rf/i,
             /sudo\s+/i,

@@ -174,8 +174,8 @@ class TmuxMonitor {
         }
 
         return { 
-            userQuestion: userQuestion || '无用户输入',
-            claudeResponse: claudeResponse || '无Claude回复'
+            userQuestion: userQuestion || 'No user input',
+            claudeResponse: claudeResponse || 'No Claude response'
         };
     }
 

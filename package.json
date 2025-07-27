@@ -1,7 +1,7 @@
 {
   "name": "taskping",
   "version": "1.0.0",
-  "description": "Claude Code智能任务通知系统 - 当Claude完成任务或需要输入时发送桌面通知",
+  "description": "Claude Code Smart Notification System - Send desktop notifications when Claude completes tasks or needs input",
   "main": "hook-notify.js",
   "scripts": {
     "install": "node install.js",

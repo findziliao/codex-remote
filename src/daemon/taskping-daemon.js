@@ -2,7 +2,7 @@
 
 /**
  * TaskPing Daemon Service
- * 后台守护进程，用于监听邮件和处理远程命令
+ * Background daemon process for monitoring emails and processing remote commands
  */
 
 const fs = require('fs');
@@ -20,7 +20,7 @@ class TaskPingDaemon {
         this.relayService = null;
         this.isRunning = false;
         
-        // 确保数据目录存在
+        // Ensure data directory exists
         const dataDir = path.dirname(this.pidFile);
         if (!fs.existsSync(dataDir)) {
             fs.mkdirSync(dataDir, { recursive: true });
@@ -29,18 +29,18 @@ class TaskPingDaemon {
 
     async start(detached = true) {
         try {
-            // 检查是否已经运行
+            // Check if already running
             if (this.isAlreadyRunning()) {
-                console.log('❌ TaskPing daemon 已经在运行中');
-                console.log('💡 使用 "taskping daemon stop" 停止现有服务');
+                console.log('❌ TaskPing daemon is already running');
+                console.log('💡 Use "taskping daemon stop" to stop existing service');
                 process.exit(1);
             }
 
             if (detached) {
-                // 以守护进程模式启动
+                // Start in daemon mode
                 await this.startDetached();
             } else {
-                // 直接在当前进程运行
+                // Run directly in current process
                 await this.startForeground();
             }
         } catch (error) {
@@ -50,41 +50,41 @@ class TaskPingDaemon {
     }
 
     async startDetached() {
-        console.log('🚀 启动 TaskPing 守护进程...');
+        console.log('🚀 Starting TaskPing daemon...');
 
-        // 创建子进程
+        // Create child process
         const child = spawn(process.execPath, [__filename, '--foreground'], {
             detached: true,
             stdio: ['ignore', 'pipe', 'pipe']
         });
 
-        // 重定向日志
+        // Redirect logs
         const logStream = fs.createWriteStream(this.logFile, { flags: 'a' });
         child.stdout.pipe(logStream);
         child.stderr.pipe(logStream);
 
-        // 保存 PID
+        // Save PID
         fs.writeFileSync(this.pidFile, child.pid.toString());
 
-        // 分离子进程
+        // Detach child process
         child.unref();
 
-        console.log(`✅ TaskPing 守护进程已启动 (PID: ${child.pid})`);
-        console.log(`📝 日志文件: ${this.logFile}`);
-        console.log('💡 使用 "taskping daemon status" 查看状态');
-        console.log('💡 使用 "taskping daemon stop" 停止服务');
+        console.log(`✅ TaskPing daemon started (PID: ${child.pid})`);
+        console.log(`📝 Log file: ${this.logFile}`);
+        console.log('💡 Use "taskping daemon status" to view status');
+        console.log('💡 Use "taskping daemon stop" to stop service');
     }
 
     async startForeground() {
-        console.log('🚀 TaskPing 守护进程启动中...');
+        console.log('🚀 TaskPing daemon starting...');
         
         this.isRunning = true;
         process.title = 'taskping-daemon';
 
-        // 加载配置
+        // Load configuration
         this.config.load();
         
-        // 初始化邮件中继服务
+        // Initialize email relay service
         const emailConfig = this.config.getChannel('email');
         if (!emailConfig || !emailConfig.enabled) {
             this.logger.warn('Email channel not configured or disabled');
@@ -94,19 +94,19 @@ class TaskPingDaemon {
         const CommandRelayService = require('../relay/command-relay');
         this.relayService = new CommandRelayService(emailConfig.config);
 
-        // 设置事件监听
+        // Setup event handlers
         this.setupEventHandlers();
 
-        // 启动服务
+        // Start service
         await this.relayService.start();
         this.logger.info('Email relay service started');
 
-        // 保持进程运行
+        // Keep process running
         this.keepAlive();
     }
 
     setupEventHandlers() {
-        // 优雅关闭
+        // Graceful shutdown
         const gracefulShutdown = async (signal) => {
             this.logger.info(`Received ${signal}, shutting down gracefully...`);
             this.isRunning = false;
@@ -115,7 +115,7 @@ class TaskPingDaemon {
                 await this.relayService.stop();
             }
             
-            // 删除 PID 文件
+            // Delete PID file
             if (fs.existsSync(this.pidFile)) {
                 fs.unlinkSync(this.pidFile);
             }
@@ -130,7 +130,7 @@ class TaskPingDaemon {
             this.config.load();
         });
 
-        // 中继服务事件
+        // Relay service events
         if (this.relayService) {
             this.relayService.on('started', () => {
                 this.logger.info('Command relay service started');
@@ -149,7 +149,7 @@ class TaskPingDaemon {
             });
         }
 
-        // 未捕获异常处理
+        // Uncaught exception handling
         process.on('uncaughtException', (error) => {
             this.logger.error('Uncaught exception:', error);
             process.exit(1);
@@ -162,48 +162,48 @@ class TaskPingDaemon {
     }
 
     keepAlive() {
-        // 保持进程运行
+        // Keep process running
         const heartbeat = setInterval(() => {
             if (!this.isRunning) {
                 clearInterval(heartbeat);
                 return;
             }
             this.logger.debug('Heartbeat');
-        }, 60000); // 每分钟输出一次心跳日志
+        }, 60000); // Output heartbeat log every minute
     }
 
     async stop() {
         if (!this.isAlreadyRunning()) {
-            console.log('❌ TaskPing daemon 没有运行');
+            console.log('❌ TaskPing daemon is not running');
             return;
         }
 
         try {
             const pid = this.getPid();
-            console.log(`🛑 正在停止 TaskPing 守护进程 (PID: ${pid})...`);
+            console.log(`🛑 Stopping TaskPing daemon (PID: ${pid})...`);
             
-            // 发送 SIGTERM 信号
+            // Send SIGTERM signal
             process.kill(pid, 'SIGTERM');
             
-            // 等待进程结束
+            // Wait for process to end
             await this.waitForStop(pid);
             
-            console.log('✅ TaskPing 守护进程已停止');
+            console.log('✅ TaskPing daemon stopped');
         } catch (error) {
-            console.error('❌ 停止守护进程失败:', error.message);
+            console.error('❌ Failed to stop daemon:', error.message);
             
-            // 强制删除 PID 文件
+            // Force delete PID file
             if (fs.existsSync(this.pidFile)) {
                 fs.unlinkSync(this.pidFile);
-                console.log('🧹 已清理 PID 文件');
+                console.log('🧹 PID file cleaned up');
             }
         }
     }
 
     async restart() {
-        console.log('🔄 重启 TaskPing 守护进程...');
+        console.log('🔄 Restarting TaskPing daemon...');
         await this.stop();
-        await new Promise(resolve => setTimeout(resolve, 2000)); // 等待2秒
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
         await this.start();
     }
 
@@ -223,28 +223,28 @@ class TaskPingDaemon {
     showStatus() {
         const status = this.getStatus();
         
-        console.log('📊 TaskPing 守护进程状态\n');
+        console.log('📊 TaskPing daemon status\n');
         
         if (status.running) {
-            console.log('✅ 状态: 运行中');
+            console.log('✅ Status: Running');
             console.log(`🆔 PID: ${status.pid}`);
-            console.log(`⏱️ 运行时间: ${status.uptime || '未知'}`);
+            console.log(`⏱️ Uptime: ${status.uptime || 'Unknown'}`);
         } else {
-            console.log('❌ 状态: 未运行');
+            console.log('❌ Status: Not running');
         }
         
-        console.log(`📝 日志文件: ${status.logFile}`);
-        console.log(`📁 PID 文件: ${status.pidFile}`);
+        console.log(`📝 Log file: ${status.logFile}`);
+        console.log(`📁 PID file: ${status.pidFile}`);
         
-        // 显示最近的日志
+        // Show recent logs
         if (fs.existsSync(status.logFile)) {
-            console.log('\n📋 最近日志:');
+            console.log('\n📋 Recent logs:');
             try {
                 const logs = fs.readFileSync(status.logFile, 'utf8');
                 const lines = logs.split('\n').filter(line => line.trim()).slice(-5);
                 lines.forEach(line => console.log(`  ${line}`));
             } catch (error) {
-                console.log('  无法读取日志文件');
+                console.log('  Unable to read log file');
             }
         }
     }
@@ -256,11 +256,11 @@ class TaskPingDaemon {
 
         try {
             const pid = parseInt(fs.readFileSync(this.pidFile, 'utf8'));
-            // 检查进程是否仍在运行
+            // Check if process is still running
             process.kill(pid, 0);
             return true;
         } catch (error) {
-            // 进程不存在，删除过时的 PID 文件
+            // Process doesn't exist, delete outdated PID file
             fs.unlinkSync(this.pidFile);
             return false;
         }
@@ -281,18 +281,18 @@ class TaskPingDaemon {
                 process.kill(pid, 0);
                 await new Promise(resolve => setTimeout(resolve, 100));
             } catch (error) {
-                // 进程已停止
+                // Process has stopped
                 return;
             }
         }
         
-        // 超时，强制结束
-        throw new Error('进程停止超时，可能需要手动结束');
+        // Timeout, force termination
+        throw new Error('Process stop timeout, may need manual termination');
     }
 
     getUptime(pid) {
         try {
-            // 在 macOS 和 Linux 上获取进程启动时间
+            // Get process start time on macOS and Linux
             const { execSync } = require('child_process');
             const result = execSync(`ps -o lstart= -p ${pid}`, { encoding: 'utf8' });
             const startTime = new Date(result.trim());
@@ -303,12 +303,12 @@ class TaskPingDaemon {
             
             return `${hours}h ${minutes}m`;
         } catch (error) {
-            return '未知';
+            return 'Unknown';
         }
     }
 }
 
-// 命令行接口
+// Command line interface
 if (require.main === module) {
     const daemon = new TaskPingDaemon();
     const command = process.argv[2];

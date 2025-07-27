@@ -108,7 +108,7 @@ class TaskPingCLI {
             process.exit(1);
         }
 
-        // 自动捕获当前tmux会话的对话内容
+        // Automatically capture current tmux session conversation content
         const metadata = await this.captureCurrentConversation();
         
         const result = await this.notifier.notify(type, metadata);
@@ -127,7 +127,7 @@ class TaskPingCLI {
             const { execSync } = require('child_process');
             const TmuxMonitor = require('./src/utils/tmux-monitor');
             
-            // 获取当前tmux会话名称
+            // Get current tmux session name
             let currentSession = null;
             try {
                 currentSession = execSync('tmux display-message -p "#S"', { 
@@ -135,7 +135,7 @@ class TaskPingCLI {
                     stdio: ['ignore', 'pipe', 'ignore']
                 }).trim();
             } catch (e) {
-                // 不在tmux中运行，返回空metadata
+                // Not running in tmux, return empty metadata
                 return {};
             }
             
@@ -143,7 +143,7 @@ class TaskPingCLI {
                 return {};
             }
             
-            // 使用TmuxMonitor捕获对话
+            // Use TmuxMonitor to capture conversation
             const tmuxMonitor = new TmuxMonitor();
             const conversation = tmuxMonitor.getRecentConversation(currentSession);
             
@@ -192,11 +192,11 @@ class TaskPingCLI {
         
         console.log('\nChannels:');
         
-        // 显示所有可用的渠道，包括未启用的
+        // Display all available channels, including disabled ones
         const allChannels = this.config._channels || {};
         const activeChannels = status.channels || {};
         
-        // 合并所有渠道信息
+        // Merge all channel information
         const channelNames = new Set([
             ...Object.keys(allChannels),
             ...Object.keys(activeChannels)
@@ -209,12 +209,12 @@ class TaskPingCLI {
             let enabled, configured, relay;
             
             if (channelStatus) {
-                // 活跃渠道，使用实际状态
+                // Active channel, use actual status
                 enabled = channelStatus.enabled ? '✅' : '❌';
                 configured = channelStatus.configured ? '✅' : '❌';
                 relay = channelStatus.supportsRelay ? '✅' : '❌';
             } else {
-                // 非活跃渠道，使用配置状态
+                // Inactive channel, use configuration status
                 enabled = channelConfig.enabled ? '✅' : '❌';
                 configured = this._isChannelConfigured(name, channelConfig) ? '✅' : '❌';
                 relay = this._supportsRelay(name) ? '✅' : '❌';
@@ -230,7 +230,7 @@ class TaskPingCLI {
     _isChannelConfigured(name, config) {
         switch (name) {
             case 'desktop':
-                return true; // 桌面通知不需要特殊配置
+                return true; // Desktop notifications don't need special configuration
             case 'email':
                 return config.config && 
                        config.config.smtp && 
@@ -287,10 +287,10 @@ class TaskPingCLI {
                 console.error('Usage: taskping relay <start|stop|status|cleanup>');
                 console.log('');
                 console.log('Commands:');
-                console.log('  start    启动邮件命令中继服务');
-                console.log('  stop     停止邮件命令中继服务');
-                console.log('  status   查看中继服务状态');
-                console.log('  cleanup  清理已完成的命令历史');
+                console.log('  start    Start email command relay service');
+                console.log('  stop     Stop email command relay service');
+                console.log('  status   View relay service status');
+                console.log('  cleanup  Clean up completed command history');
                 process.exit(1);
         }
     }
@@ -301,59 +301,59 @@ class TaskPingCLI {
             const emailConfig = this.config.getChannel('email');
             
             if (!emailConfig || !emailConfig.enabled) {
-                console.error('❌ 邮件渠道未配置或未启用');
-                console.log('请先运行: taskping config');
+                console.error('❌ Email channel not configured or disabled');
+                console.log('Please run first: taskping config');
                 process.exit(1);
             }
 
-            console.log('🚀 启动邮件命令中继服务...');
+            console.log('🚀 Starting email command relay service...');
             
             const relayService = new CommandRelayService(emailConfig.config);
             
-            // 监听事件
+            // Listen for events
             relayService.on('started', () => {
-                console.log('✅ 命令中继服务已启动');
-                console.log('📧 正在监听邮件回复...');
-                console.log('💡 现在您可以通过回复邮件来远程执行Claude Code命令');
+                console.log('✅ Command relay service started');
+                console.log('📧 Listening for email replies...');
+                console.log('💡 You can now remotely execute Claude Code commands by replying to emails');
                 console.log('');
-                console.log('按 Ctrl+C 停止服务');
+                console.log('Press Ctrl+C to stop the service');
             });
 
             relayService.on('commandQueued', (command) => {
-                console.log(`📨 收到新命令: ${command.command.substring(0, 50)}...`);
+                console.log(`📨 Received new command: ${command.command.substring(0, 50)}...`);
             });
 
             relayService.on('commandExecuted', (command) => {
-                console.log(`✅ 命令执行成功: ${command.id}`);
+                console.log(`✅ Command executed successfully: ${command.id}`);
             });
 
             relayService.on('commandFailed', (command, error) => {
-                console.log(`❌ 命令执行失败: ${command.id} - ${error.message}`);
+                console.log(`❌ Command execution failed: ${command.id} - ${error.message}`);
             });
 
-            // 处理优雅关闭
+            // Handle graceful shutdown
             process.on('SIGINT', async () => {
-                console.log('\n🛑 正在停止命令中继服务...');
+                console.log('\n🛑 Stopping command relay service...');
                 await relayService.stop();
-                console.log('✅ 服务已停止');
+                console.log('✅ Service stopped');
                 process.exit(0);
             });
 
-            // 启动服务
+            // Start service
             await relayService.start();
             
-            // 保持进程运行
+            // Keep process running
             process.stdin.resume();
             
         } catch (error) {
-            console.error('❌ 启动中继服务失败:', error.message);
+            console.error('❌ Failed to start relay service:', error.message);
             process.exit(1);
         }
     }
 
     async stopRelay(args) {
-        console.log('💡 命令中继服务通常通过 Ctrl+C 停止');
-        console.log('如果服务仍在运行，请找到对应的进程并手动终止');
+        console.log('💡 Command relay service usually stopped with Ctrl+C');
+        console.log('If the service is still running, please find the corresponding process and terminate it manually');
     }
 
     async relayStatus(args) {
@@ -362,27 +362,27 @@ class TaskPingCLI {
             const path = require('path');
             const stateFile = path.join(__dirname, 'src/data/relay-state.json');
             
-            console.log('📊 命令中继服务状态\n');
+            console.log('📊 Command relay service status\n');
             
-            // 检查邮件配置
+            // Check email configuration
             const emailConfig = this.config.getChannel('email');
             if (!emailConfig || !emailConfig.enabled) {
-                console.log('❌ 邮件渠道未配置');
+                console.log('❌ Email channel not configured');
                 return;
             }
             
-            console.log('✅ 邮件配置已启用');
+            console.log('✅ Email configuration enabled');
             console.log(`📧 SMTP: ${emailConfig.config.smtp.host}:${emailConfig.config.smtp.port}`);
             console.log(`📥 IMAP: ${emailConfig.config.imap.host}:${emailConfig.config.imap.port}`);
-            console.log(`📬 收件人: ${emailConfig.config.to}`);
+            console.log(`📬 Recipient: ${emailConfig.config.to}`);
             
-            // 检查中继状态
+            // Check relay status
             if (fs.existsSync(stateFile)) {
                 const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
-                console.log(`\n📋 命令队列: ${state.commandQueue?.length || 0} 个命令`);
+                console.log(`\n📋 Command queue: ${state.commandQueue?.length || 0} commands`);
                 
                 if (state.commandQueue && state.commandQueue.length > 0) {
-                    console.log('\n最近的命令:');
+                    console.log('\nRecent commands:');
                     state.commandQueue.slice(-5).forEach(cmd => {
                         const status = cmd.status === 'completed' ? '✅' : 
                                      cmd.status === 'failed' ? '❌' : 
@@ -391,11 +391,11 @@ class TaskPingCLI {
                     });
                 }
             } else {
-                console.log('\n📋 无命令历史记录');
+                console.log('\n📋 No command history found');
             }
             
         } catch (error) {
-            console.error('❌ 获取状态失败:', error.message);
+            console.error('❌ Failed to get status:', error.message);
         }
     }
 
@@ -406,14 +406,14 @@ class TaskPingCLI {
             const stateFile = path.join(__dirname, 'src/data/relay-state.json');
             
             if (!fs.existsSync(stateFile)) {
-                console.log('📋 无需清理，没有找到命令历史');
+                console.log('📋 No cleanup needed, no command history found');
                 return;
             }
             
             const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
             const beforeCount = state.commandQueue?.length || 0;
             
-            // 清理已完成的命令 (保留24小时内的)
+            // Clean up completed commands (keep those within 24 hours)
             const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
             state.commandQueue = (state.commandQueue || []).filter(cmd => 
                 cmd.status !== 'completed' || 
@@ -425,11 +425,11 @@ class TaskPingCLI {
             
             fs.writeFileSync(stateFile, JSON.stringify(state, null, 2));
             
-            console.log(`🧹 清理完成: 移除了 ${removedCount} 个已完成的命令`);
-            console.log(`📋 剩余 ${afterCount} 个命令在队列中`);
+            console.log(`🧹 Cleanup completed: removed ${removedCount} completed commands`);
+            console.log(`📋 ${afterCount} commands remaining in queue`);
             
         } catch (error) {
-            console.error('❌ 清理失败:', error.message);
+            console.error('❌ Cleanup failed:', error.message);
         }
     }
 
@@ -440,13 +440,13 @@ class TaskPingCLI {
         const configType = args[0];
         
         if (!configType) {
-            console.log('可用的配置文件:');
-            console.log('  user      - 用户个人配置 (config/user.json)');
-            console.log('  channels  - 通知渠道配置 (config/channels.json)');
-            console.log('  default   - 默认配置模板 (config/default.json)');
+            console.log('Available configuration files:');
+            console.log('  user      - User personal configuration (config/user.json)');
+            console.log('  channels  - Notification channel configuration (config/channels.json)');
+            console.log('  default   - Default configuration template (config/default.json)');
             console.log('');
-            console.log('使用方法: taskping edit-config <配置类型>');
-            console.log('例如: taskping edit-config channels');
+            console.log('Usage: taskping edit-config <configuration-type>');
+            console.log('Example: taskping edit-config channels');
             return;
         }
 
@@ -458,23 +458,23 @@ class TaskPingCLI {
 
         const configFile = configFiles[configType];
         if (!configFile) {
-            console.error('❌ 无效的配置类型:', configType);
-            console.log('可用类型: user, channels, default');
+            console.error('❌ Invalid configuration type:', configType);
+            console.log('Available types: user, channels, default');
             return;
         }
 
-        // 检查文件是否存在
+        // Check if file exists
         const fs = require('fs');
         if (!fs.existsSync(configFile)) {
-            console.error('❌ 配置文件不存在:', configFile);
+            console.error('❌ Configuration file does not exist:', configFile);
             return;
         }
 
-        console.log(`📝 正在打开配置文件: ${configFile}`);
-        console.log('💡 编辑完成后保存并关闭编辑器即可生效');
+        console.log(`📝 Opening configuration file: ${configFile}`);
+        console.log('💡 Save and close the editor after editing to take effect');
         console.log('');
 
-        // 确定使用的编辑器
+        // Determine the editor to use
         const editor = process.env.EDITOR || process.env.VISUAL || this._getDefaultEditor();
         
         try {
@@ -484,36 +484,36 @@ class TaskPingCLI {
 
             editorProcess.on('close', (code) => {
                 if (code === 0) {
-                    console.log('✅ 配置文件已保存');
-                    console.log('💡 运行 "taskping status" 查看更新后的配置');
+                    console.log('✅ Configuration file saved');
+                    console.log('💡 Run "taskping status" to view updated configuration');
                 } else {
-                    console.log('❌ 编辑器异常退出');
+                    console.log('❌ Editor exited abnormally');
                 }
             });
 
             editorProcess.on('error', (error) => {
-                console.error('❌ 无法启动编辑器:', error.message);
+                console.error('❌ Unable to start editor:', error.message);
                 console.log('');
-                console.log('💡 你可以手动编辑配置文件:');
+                console.log('💡 You can manually edit the configuration file:');
                 console.log(`   ${configFile}`);
             });
 
         } catch (error) {
-            console.error('❌ 启动编辑器失败:', error.message);
+            console.error('❌ Failed to start editor:', error.message);
             console.log('');
-            console.log('💡 你可以手动编辑配置文件:');
+            console.log('💡 You can manually edit the configuration file:');
             console.log(`   ${configFile}`);
         }
     }
 
     _getDefaultEditor() {
-        // 根据平台确定默认编辑器
+        // Determine default editor based on platform
         if (process.platform === 'win32') {
             return 'notepad';
         } else if (process.platform === 'darwin') {
-            return 'nano'; // 在macOS上使用nano，因为大多数用户都有
+            return 'nano'; // Use nano on macOS as most users have it
         } else {
-            return 'nano'; // Linux默认使用nano
+            return 'nano'; // Linux default to nano
         }
     }
 
@@ -534,17 +534,17 @@ class TaskPingCLI {
         };
 
         try {
-            console.log('🚀 TaskPing 邮件快速配置向导\n');
+            console.log('🚀 TaskPing Email Quick Setup Wizard\n');
 
-            // 选择邮箱提供商
-            console.log('请选择您的邮箱提供商:');
+            // Select email provider
+            console.log('Please select your email provider:');
             console.log('1. Gmail');
-            console.log('2. QQ邮箱');
-            console.log('3. 163邮箱');
+            console.log('2. QQ Email');
+            console.log('3. 163 Email');
             console.log('4. Outlook/Hotmail');
-            console.log('5. 自定义');
+            console.log('5. Custom');
 
-            const providerChoice = await question('\n请选择 (1-5): ');
+            const providerChoice = await question('\nPlease select (1-5): ');
             
             let smtpHost, smtpPort, imapHost, imapPort, secure;
             
@@ -555,8 +555,8 @@ class TaskPingCLI {
                     imapHost = 'imap.gmail.com';
                     imapPort = 993;
                     secure = false;
-                    console.log('\n📧 Gmail 配置');
-                    console.log('💡 需要先启用两步验证并生成应用密码');
+                    console.log('\n📧 Gmail Configuration');
+                    console.log('💡 Need to enable two-factor authentication and generate app password first');
                     break;
                 case '2':
                     smtpHost = 'smtp.qq.com';
@@ -564,7 +564,7 @@ class TaskPingCLI {
                     imapHost = 'imap.qq.com';
                     imapPort = 993;
                     secure = false;
-                    console.log('\n📧 QQ邮箱配置');
+                    console.log('\n📧 QQ Email Configuration');
                     break;
                 case '3':
                     smtpHost = 'smtp.163.com';
@@ -572,7 +572,7 @@ class TaskPingCLI {
                     imapHost = 'imap.163.com';
                     imapPort = 993;
                     secure = false;
-                    console.log('\n📧 163邮箱配置');
+                    console.log('\n📧 163 Email Configuration');
                     break;
                 case '4':
                     smtpHost = 'smtp.live.com';
@@ -580,29 +580,29 @@ class TaskPingCLI {
                     imapHost = 'imap-mail.outlook.com';
                     imapPort = 993;
                     secure = false;
-                    console.log('\n📧 Outlook 配置');
+                    console.log('\n📧 Outlook Configuration');
                     break;
                 case '5':
-                    console.log('\n📧 自定义配置');
-                    smtpHost = await question('SMTP 主机: ');
-                    smtpPort = parseInt(await question('SMTP 端口 (默认587): ') || '587');
-                    imapHost = await question('IMAP 主机: ');
-                    imapPort = parseInt(await question('IMAP 端口 (默认993): ') || '993');
-                    const secureInput = await question('使用 SSL/TLS? (y/n): ');
+                    console.log('\n📧 Custom Configuration');
+                    smtpHost = await question('SMTP Host: ');
+                    smtpPort = parseInt(await question('SMTP Port (default 587): ') || '587');
+                    imapHost = await question('IMAP Host: ');
+                    imapPort = parseInt(await question('IMAP Port (default 993): ') || '993');
+                    const secureInput = await question('Use SSL/TLS? (y/n): ');
                     secure = secureInput.toLowerCase() === 'y';
                     break;
                 default:
-                    console.log('❌ 无效选择');
+                    console.log('❌ Invalid selection');
                     rl.close();
                     return;
             }
 
-            // 获取邮箱账户信息
-            console.log('\n📝 请输入邮箱账户信息:');
-            const email = await question('邮箱地址: ');
-            const password = await question('密码/应用密码: ');
+            // Get email account information
+            console.log('\n📝 Please enter email account information:');
+            const email = await question('Email address: ');
+            const password = await question('Password/App password: ');
             
-            // 构建配置
+            // Build configuration
             const emailConfig = {
                 type: "email",
                 enabled: true,
@@ -633,7 +633,7 @@ class TaskPingCLI {
                 }
             };
 
-            // 读取现有配置
+            // Read existing configuration
             const channelsFile = path.join(__dirname, 'config/channels.json');
             let channels = {};
             
@@ -641,24 +641,24 @@ class TaskPingCLI {
                 channels = JSON.parse(fs.readFileSync(channelsFile, 'utf8'));
             }
 
-            // 更新邮件配置
+            // Update email configuration
             channels.email = emailConfig;
 
-            // 保存配置
+            // Save configuration
             fs.writeFileSync(channelsFile, JSON.stringify(channels, null, 2));
 
-            console.log('\n✅ 邮件配置已保存！');
-            console.log('\n🧪 现在可以测试邮件功能:');
+            console.log('\n✅ Email configuration saved!');
+            console.log('\n🧪 You can now test email functionality:');
             console.log('  taskping test');
-            console.log('\n🚀 启动命令中继服务:');
+            console.log('\n🚀 Start command relay service:');
             console.log('  taskping relay start');
 
-            // 询问是否立即测试
-            const testNow = await question('\n立即测试邮件发送? (y/n): ');
+            // Ask if user wants to test immediately
+            const testNow = await question('\nTest email sending now? (y/n): ');
             if (testNow.toLowerCase() === 'y') {
                 rl.close();
                 
-                // 重新加载配置并测试
+                // Reload configuration and test
                 await this.init();
                 await this.handleTest([]);
             } else {
@@ -666,7 +666,7 @@ class TaskPingCLI {
             }
 
         } catch (error) {
-            console.error('❌ 配置失败:', error.message);
+            console.error('❌ Configuration failed:', error.message);
             rl.close();
         }
     }
@@ -694,10 +694,10 @@ class TaskPingCLI {
                 console.log('Usage: taskping daemon <start|stop|restart|status>');
                 console.log('');
                 console.log('Commands:');
-                console.log('  start    启动后台守护进程');
-                console.log('  stop     停止后台守护进程');
-                console.log('  restart  重启后台守护进程');
-                console.log('  status   查看守护进程状态');
+                console.log('  start    Start background daemon process');
+                console.log('  stop     Stop background daemon process');
+                console.log('  restart  Restart background daemon process');
+                console.log('  status   View daemon process status');
                 break;
         }
     }
@@ -711,13 +711,13 @@ class TaskPingCLI {
         switch (command) {
             case 'list':
                 const pending = bridge.getPendingCommands();
-                console.log(`📋 待处理命令: ${pending.length} 个\n`);
+                console.log(`📋 Pending commands: ${pending.length}\n`);
                 if (pending.length > 0) {
                     pending.forEach((cmd, index) => {
                         console.log(`${index + 1}. ${cmd.id}`);
-                        console.log(`   命令: ${cmd.command}`);
-                        console.log(`   时间: ${cmd.timestamp}`);
-                        console.log(`   会话: ${cmd.sessionId}`);
+                        console.log(`   Command: ${cmd.command}`);
+                        console.log(`   Time: ${cmd.timestamp}`);
+                        console.log(`   Session: ${cmd.sessionId}`);
                         console.log('');
                     });
                 }
@@ -725,13 +725,13 @@ class TaskPingCLI {
                 
             case 'status':
                 const status = bridge.getStatus();
-                console.log('📊 命令桥接器状态\n');
-                console.log(`待处理命令: ${status.pendingCommands}`);
-                console.log(`已处理命令: ${status.processedCommands}`);
-                console.log(`命令目录: ${status.commandsDir}`);
-                console.log(`响应目录: ${status.responseDir}`);
+                console.log('📊 Command bridge status\n');
+                console.log(`Pending commands: ${status.pendingCommands}`);
+                console.log(`Processed commands: ${status.processedCommands}`);
+                console.log(`Commands directory: ${status.commandsDir}`);
+                console.log(`Response directory: ${status.responseDir}`);
                 if (status.recentCommands.length > 0) {
-                    console.log('\n最近命令:');
+                    console.log('\nRecent commands:');
                     status.recentCommands.forEach(cmd => {
                         console.log(`  • ${cmd.command} (${cmd.timestamp})`);
                     });
@@ -740,7 +740,7 @@ class TaskPingCLI {
                 
             case 'cleanup':
                 bridge.cleanup();
-                console.log('🧹 已清理旧的命令文件');
+                console.log('🧹 Old command files cleaned up');
                 break;
                 
             case 'clear':
@@ -748,17 +748,17 @@ class TaskPingCLI {
                 for (const cmd of pending2) {
                     bridge.markCommandProcessed(cmd.id, 'cancelled', 'Manually cancelled');
                 }
-                console.log(`🗑️ 已清除 ${pending2.length} 个待处理命令`);
+                console.log(`🗑️ Cleared ${pending2.length} pending commands`);
                 break;
                 
             default:
                 console.log('Usage: taskping commands <list|status|cleanup|clear>');
                 console.log('');
                 console.log('Commands:');
-                console.log('  list     显示待处理的邮件命令');
-                console.log('  status   显示命令桥接器状态');
-                console.log('  cleanup  清理旧的命令文件');
-                console.log('  clear    清除所有待处理命令');
+                console.log('  list     Show pending email commands');
+                console.log('  status   Show command bridge status');
+                console.log('  cleanup  Clean up old command files');
+                console.log('  clear    Clear all pending commands');
                 break;
         }
     }
@@ -767,14 +767,14 @@ class TaskPingCLI {
         const ClipboardAutomation = require('./src/automation/clipboard-automation');
         const automation = new ClipboardAutomation();
         
-        const testCommand = args.join(' ') || 'echo "测试邮件回复自动粘贴功能"';
+        const testCommand = args.join(' ') || 'echo "Testing email reply auto-paste functionality"';
         
-        console.log('🧪 测试自动粘贴功能');
-        console.log(`📝 测试命令: ${testCommand}`);
-        console.log('\n⚠️  请确保 Claude Code 或 Terminal 窗口已打开并处于活动状态');
-        console.log('⏳ 3 秒后自动发送命令...\n');
+        console.log('🧪 Testing auto-paste functionality');
+        console.log(`📝 Test command: ${testCommand}`);
+        console.log('\n⚠️  Please ensure Claude Code or Terminal window is open and active');
+        console.log('⏳ Command will be sent automatically in 3 seconds...\n');
         
-        // 倒计时
+        // Countdown
         for (let i = 3; i > 0; i--) {
             process.stdout.write(`${i}... `);
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -784,14 +784,14 @@ class TaskPingCLI {
         try {
             const success = await automation.sendCommand(testCommand);
             if (success) {
-                console.log('✅ 命令已自动粘贴！');
-                console.log('💡 如果没有看到效果，请检查应用权限和窗口状态');
+                console.log('✅ Command has been auto-pasted!');
+                console.log('💡 If you don\'t see the effect, please check app permissions and window status');
             } else {
-                console.log('❌ 自动粘贴失败');
-                console.log('💡 请确保给予自动化权限并打开目标应用');
+                console.log('❌ Auto-paste failed');
+                console.log('💡 Please ensure automation permissions are granted and target app is open');
             }
         } catch (error) {
-            console.error('❌ 测试失败:', error.message);
+            console.error('❌ Test failed:', error.message);
         }
     }
 
@@ -805,37 +805,37 @@ class TaskPingCLI {
         const SimpleAutomation = require('./src/automation/simple-automation');
         const automation = new SimpleAutomation();
         
-        const testCommand = args.join(' ') || 'echo "测试简单自动化功能"';
+        const testCommand = args.join(' ') || 'echo "Testing simple automation functionality"';
         
-        console.log('🧪 测试简单自动化功能');
-        console.log(`📝 测试命令: ${testCommand}`);
-        console.log('\n这个测试会：');
-        console.log('1. 📋 将命令复制到剪贴板');
-        console.log('2. 📄 保存命令到文件');
-        console.log('3. 🔔 发送通知（包含对话框）');
-        console.log('4. 🤖 尝试自动粘贴（如果有权限）');
-        console.log('\n⏳ 开始测试...\n');
+        console.log('🧪 Testing simple automation functionality');
+        console.log(`📝 Test command: ${testCommand}`);
+        console.log('\nThis test will:');
+        console.log('1. 📋 Copy command to clipboard');
+        console.log('2. 📄 Save command to file');
+        console.log('3. 🔔 Send notification (including dialog box)');
+        console.log('4. 🤖 Attempt auto-paste (if permissions granted)');
+        console.log('\n⏳ Starting test...\n');
         
         try {
             const success = await automation.sendCommand(testCommand, 'test-session');
             if (success) {
-                console.log('✅ 测试成功！');
-                console.log('\n📋 下一步操作：');
-                console.log('1. 检查是否收到了通知');
-                console.log('2. 检查命令是否已复制到剪贴板');
-                console.log('3. 如果看到对话框，可以选择打开命令文件');
-                console.log('4. 手动粘贴到 Claude Code 中（如果没有自动粘贴）');
+                console.log('✅ Test successful!');
+                console.log('\n📋 Next steps:');
+                console.log('1. Check if you received notification');
+                console.log('2. Check if command was copied to clipboard');
+                console.log('3. If you see dialog box, you can choose to open command file');
+                console.log('4. Manually paste to Claude Code (if auto-paste didn\'t work)');
                 
                 const status = automation.getStatus();
-                console.log(`\n📄 命令文件: ${status.commandFile}`);
+                console.log(`\n📄 Command file: ${status.commandFile}`);
                 if (status.commandFileExists) {
-                    console.log('💡 可以运行 "open -t ' + status.commandFile + '" 查看命令文件');
+                    console.log('💡 You can run "open -t ' + status.commandFile + '" to view command file');
                 }
             } else {
-                console.log('❌ 测试失败');
+                console.log('❌ Test failed');
             }
         } catch (error) {
-            console.error('❌ 测试过程中发生错误:', error.message);
+            console.error('❌ Error occurred during test:', error.message);
         }
     }
 
@@ -843,50 +843,50 @@ class TaskPingCLI {
         const ClaudeAutomation = require('./src/automation/claude-automation');
         const automation = new ClaudeAutomation();
         
-        const testCommand = args.join(' ') || 'echo "这是一个自动化测试命令，来自邮件回复"';
+        const testCommand = args.join(' ') || 'echo "This is an automated test command from email reply"';
         
-        console.log('🤖 测试 Claude Code 专用自动化');
-        console.log(`📝 测试命令: ${testCommand}`);
-        console.log('\n⚠️  请确保：');
-        console.log('   1. Claude Code 应用已打开');
-        console.log('   2. 或者 Terminal/iTerm2 等终端应用已打开');
-        console.log('   3. 已经给予必要的辅助功能权限');
-        console.log('\n⏳ 5 秒后开始完全自动化测试...\n');
+        console.log('🤖 Testing Claude Code specialized automation');
+        console.log(`📝 Test command: ${testCommand}`);
+        console.log('\n⚠️  Please ensure:');
+        console.log('   1. Claude Code application is open');
+        console.log('   2. Or Terminal/iTerm2 etc. terminal applications are open');
+        console.log('   3. Necessary accessibility permissions have been granted');
+        console.log('\n⏳ Full automation test will start in 5 seconds...\n');
         
-        // 倒计时
+        // Countdown
         for (let i = 5; i > 0; i--) {
             process.stdout.write(`${i}... `);
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
-        console.log('\n🚀 开始自动化...\n');
+        console.log('\n🚀 Starting automation...\n');
         
         try {
-            // 检查权限
+            // Check permissions
             const hasPermission = await automation.requestPermissions();
             if (!hasPermission) {
-                console.log('⚠️ 权限检查失败，但仍会尝试执行...');
+                console.log('⚠️ Permission check failed, but will still attempt execution...');
             }
             
-            // 执行完全自动化
+            // Execute full automation
             const success = await automation.sendCommand(testCommand, 'test-session');
             
             if (success) {
-                console.log('✅ 完全自动化测试成功！');
-                console.log('💡 命令应该已经自动输入到 Claude Code 并开始执行');
-                console.log('🔍 请检查 Claude Code 窗口是否收到了命令');
+                console.log('✅ Full automation test successful!');
+                console.log('💡 Command should have been automatically input to Claude Code and started execution');
+                console.log('🔍 Please check Claude Code window to see if command was received');
             } else {
-                console.log('❌ 自动化测试失败');
-                console.log('💡 可能的原因：');
-                console.log('   • 没有找到 Claude Code 或终端应用');
-                console.log('   • 权限不足');
-                console.log('   • 应用没有响应');
-                console.log('\n🔧 建议：');
-                console.log('   1. 运行 "taskping setup-permissions" 检查权限');
-                console.log('   2. 确保 Claude Code 在前台运行');
-                console.log('   3. 尝试先手动在 Claude Code 中点击输入框');
+                console.log('❌ Automation test failed');
+                console.log('💡 Possible reasons:');
+                console.log('   • Claude Code or terminal application not found');
+                console.log('   • Insufficient permissions');
+                console.log('   • Application not responding');
+                console.log('\n🔧 Suggestions:');
+                console.log('   1. Run "taskping setup-permissions" to check permissions');
+                console.log('   2. Ensure Claude Code is running in foreground');
+                console.log('   3. Try manually clicking input box in Claude Code first');
             }
         } catch (error) {
-            console.error('❌ 测试过程中发生错误:', error.message);
+            console.error('❌ Error occurred during test:', error.message);
         }
     }
 
@@ -943,15 +943,15 @@ Commands Subcommands:
 Examples:
   taskping notify --type completed
   taskping test
-  taskping setup-email             # 快速配置邮件 (推荐)
-  taskping edit-config channels    # 直接编辑配置文件
-  taskping config                  # 交互式配置
+  taskping setup-email             # Quick email setup (recommended)
+  taskping edit-config channels    # Edit configuration files directly
+  taskping config                  # Interactive configuration
   taskping install
-  taskping daemon start              # 启动后台服务 (推荐)
-  taskping daemon status             # 查看服务状态  
-  taskping test-claude               # 测试完全自动化 (推荐)
-  taskping commands list             # 查看待处理的邮件命令
-  taskping relay start               # 前台运行 (需要保持窗口)
+  taskping daemon start              # Start background service (recommended)
+  taskping daemon status             # View service status  
+  taskping test-claude               # Test full automation (recommended)
+  taskping commands list             # View pending email commands
+  taskping relay start               # Run in foreground (need to keep window open)
 
 For more information, visit: https://github.com/TaskPing/TaskPing
         `);

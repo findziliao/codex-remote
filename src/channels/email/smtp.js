@@ -33,7 +33,7 @@ class EmailChannel extends NotificationChannel {
     }
 
     _generateToken() {
-        // 生成简短的Token (大写字母+数字，8位)
+        // Generate short Token (uppercase letters + numbers, 8 digits)
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let token = '';
         for (let i = 0; i < 8; i++) {
@@ -57,7 +57,7 @@ class EmailChannel extends NotificationChannel {
                     user: this.config.smtp.auth.user,
                     pass: this.config.smtp.auth.pass
                 },
-                // 添加超时设置
+                // Add timeout settings
                 connectionTimeout: 10000,
                 greetingTimeout: 10000,
                 socketTimeout: 10000
@@ -93,11 +93,11 @@ class EmailChannel extends NotificationChannel {
             throw new Error('Email recipient not configured');
         }
 
-        // 生成会话ID和Token
+        // Generate session ID and Token
         const sessionId = uuidv4();
         const token = this._generateToken();
         
-        // 获取当前tmux会话和对话内容
+        // Get current tmux session and conversation content
         const tmuxSession = this._getCurrentTmuxSession();
         if (tmuxSession && !notification.metadata) {
             const conversation = this.tmuxMonitor.getRecentConversation(tmuxSession);
@@ -108,10 +108,10 @@ class EmailChannel extends NotificationChannel {
             };
         }
         
-        // 创建会话记录
+        // Create session record
         await this._createSession(sessionId, notification, token);
 
-        // 生成邮件内容
+        // Generate email content
         const emailContent = this._generateEmailContent(notification, sessionId, token);
         
         const mailOptions = {
@@ -120,7 +120,7 @@ class EmailChannel extends NotificationChannel {
             subject: emailContent.subject,
             html: emailContent.html,
             text: emailContent.text,
-            // 添加自定义头部用于回复识别
+            // Add custom headers for reply recognition
             headers: {
                 'X-TaskPing-Session-ID': sessionId,
                 'X-TaskPing-Type': notification.type
@@ -133,7 +133,7 @@ class EmailChannel extends NotificationChannel {
             return true;
         } catch (error) {
             this.logger.error('Failed to send email:', error.message);
-            // 清理失败的会话
+            // Clean up failed session
             await this._removeSession(sessionId);
             return false;
         }
@@ -145,7 +145,7 @@ class EmailChannel extends NotificationChannel {
             token: token,
             type: 'pty',
             created: new Date().toISOString(),
-            expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24小时后过期
+            expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Expires after 24 hours
             createdAt: Math.floor(Date.now() / 1000),
             expiresAt: Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000),
             cwd: process.cwd(),
@@ -162,7 +162,7 @@ class EmailChannel extends NotificationChannel {
         const sessionFile = path.join(this.sessionsDir, `${sessionId}.json`);
         fs.writeFileSync(sessionFile, JSON.stringify(session, null, 2));
         
-        // 同时保存到PTY映射格式
+        // Also save in PTY mapping format
         const sessionMapPath = process.env.SESSION_MAP_PATH || path.join(__dirname, '../../data/session-map.json');
         let sessionMap = {};
         if (fs.existsSync(sessionMapPath)) {
@@ -173,7 +173,7 @@ class EmailChannel extends NotificationChannel {
             }
         }
         
-        // 使用传入的tmux会话名称或检测当前会话
+        // Use passed tmux session name or detect current session
         let tmuxSession = notification.metadata?.tmuxSession || this._getCurrentTmuxSession() || 'claude-taskping';
         
         sessionMap[token] = {
@@ -186,7 +186,7 @@ class EmailChannel extends NotificationChannel {
             description: `${notification.type} - ${notification.project}`
         };
         
-        // 确保目录存在
+        // Ensure directory exists
         const mapDir = path.dirname(sessionMapPath);
         if (!fs.existsSync(mapDir)) {
             fs.mkdirSync(mapDir, { recursive: true });
@@ -209,10 +209,10 @@ class EmailChannel extends NotificationChannel {
         const template = this._getTemplate(notification.type);
         const timestamp = new Date().toLocaleString('zh-CN');
         
-        // 获取项目目录名（最后一级目录）
+        // Get project directory name (last level directory)
         const projectDir = path.basename(process.cwd());
         
-        // 提取用户问题（从notification.metadata中获取，如果有的话）
+        // Extract user question (from notification.metadata if available)
         let userQuestion = '';
         let claudeResponse = '';
         
@@ -221,12 +221,12 @@ class EmailChannel extends NotificationChannel {
             claudeResponse = notification.metadata.claudeResponse || '';
         }
         
-        // 限制用户问题长度用于标题
+        // Limit user question length for title
         const maxQuestionLength = 30;
         const shortQuestion = userQuestion.length > maxQuestionLength ? 
             userQuestion.substring(0, maxQuestionLength) + '...' : userQuestion;
         
-        // 生成更具辨识度的标题
+        // Generate more distinctive title
         let enhancedSubject = template.subject;
         if (shortQuestion) {
             enhancedSubject = enhancedSubject.replace('{{project}}', `${projectDir} | ${shortQuestion}`);
@@ -234,25 +234,25 @@ class EmailChannel extends NotificationChannel {
             enhancedSubject = enhancedSubject.replace('{{project}}', projectDir);
         }
         
-        // 模板变量替换
+        // Template variable replacement
         const variables = {
             project: projectDir,
             message: notification.message,
             timestamp: timestamp,
             sessionId: sessionId,
             token: token,
-            type: notification.type === 'completed' ? '任务完成' : '等待输入',
-            userQuestion: userQuestion || '未指定任务',
+            type: notification.type === 'completed' ? 'Task completed' : 'Waiting for input',
+            userQuestion: userQuestion || 'No specified task',
             claudeResponse: claudeResponse || notification.message,
             projectDir: projectDir,
-            shortQuestion: shortQuestion || '无具体问题'
+            shortQuestion: shortQuestion || 'No specific question'
         };
 
         let subject = enhancedSubject;
         let html = template.html;
         let text = template.text;
 
-        // 替换模板变量
+        // Replace template variables
         Object.keys(variables).forEach(key => {
             const placeholder = new RegExp(`{{${key}}}`, 'g');
             subject = subject.replace(placeholder, variables[key]);
@@ -264,131 +264,131 @@ class EmailChannel extends NotificationChannel {
     }
 
     _getTemplate(type) {
-        // 默认模板
+        // Default templates
         const templates = {
             completed: {
-                subject: '[TaskPing #{{token}}] Claude Code 任务完成 - {{project}}',
+                subject: '[TaskPing #{{token}}] Claude Code Task Completed - {{project}}',
                 html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
                     <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                         <h2 style="color: #2c3e50; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
-                            🎉 Claude Code 任务完成
+                            🎉 Claude Code Task Completed
                         </h2>
                         
                         <div style="background-color: #ecf0f1; padding: 15px; border-radius: 6px; margin: 20px 0;">
                             <p style="margin: 0; color: #2c3e50;">
-                                <strong>项目:</strong> {{projectDir}}<br>
-                                <strong>时间:</strong> {{timestamp}}<br>
-                                <strong>状态:</strong> {{type}}
+                                <strong>Project:</strong> {{projectDir}}<br>
+                                <strong>Time:</strong> {{timestamp}}<br>
+                                <strong>Status:</strong> {{type}}
                             </p>
                         </div>
 
                         <div style="background-color: #fff3e0; padding: 15px; border-radius: 6px; border-left: 4px solid #ff9800; margin: 20px 0;">
-                            <h4 style="margin-top: 0; color: #e65100;">📝 您的问题</h4>
+                            <h4 style="margin-top: 0; color: #e65100;">📝 Your Question</h4>
                             <p style="margin: 0; color: #2c3e50; font-style: italic;">{{userQuestion}}</p>
                         </div>
 
                         <div style="background-color: #e8f5e8; padding: 15px; border-radius: 6px; border-left: 4px solid #27ae60;">
-                            <h4 style="margin-top: 0; color: #27ae60;">🤖 Claude 的回复</h4>
+                            <h4 style="margin-top: 0; color: #27ae60;">🤖 Claude's Response</h4>
                             <p style="margin: 0; color: #2c3e50;">{{claudeResponse}}</p>
                         </div>
 
                         <div style="margin: 25px 0; padding: 20px; background-color: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
-                            <h3 style="margin-top: 0; color: #856404;">💡 如何继续对话</h3>
+                            <h3 style="margin-top: 0; color: #856404;">💡 How to Continue the Conversation</h3>
                             <p style="margin: 10px 0; color: #856404;">
-                                要继续与 Claude Code 对话，请直接<strong>回复此邮件</strong>，在邮件正文中输入您的指令。
+                                To continue conversation with Claude Code, please <strong>reply to this email</strong> directly and enter your instructions in the email body.
                             </p>
                             <div style="background-color: white; padding: 10px; border-radius: 4px; font-family: monospace; color: #495057;">
-                                示例回复:<br>
-                                • "请继续优化代码"<br>
-                                • "生成单元测试"<br>
-                                • "解释这个函数的作用"
+                                Example replies:<br>
+                                • "Please continue optimizing the code"<br>
+                                • "Generate unit tests"<br>
+                                • "Explain the purpose of this function"
                             </div>
                         </div>
 
                         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; font-size: 12px; color: #6c757d;">
-                            <p style="margin: 5px 0;">会话ID: <code>{{sessionId}}</code></p>
-                            <p style="margin: 5px 0;">🔒 安全提示: 请勿转发此邮件，会话将在24小时后自动过期</p>
-                            <p style="margin: 5px 0;">📧 这是一封来自 TaskPing 的自动邮件</p>
+                            <p style="margin: 5px 0;">Session ID: <code>{{sessionId}}</code></p>
+                            <p style="margin: 5px 0;">🔒 Security note: Please do not forward this email, session will automatically expire after 24 hours</p>
+                            <p style="margin: 5px 0;">📧 This is an automated email from TaskPing</p>
                         </div>
                     </div>
                 </div>
                 `,
                 text: `
-[TaskPing #{{token}}] Claude Code 任务完成 - {{projectDir}} | {{shortQuestion}}
+[TaskPing #{{token}}] Claude Code Task Completed - {{projectDir}} | {{shortQuestion}}
 
-项目: {{projectDir}}
-时间: {{timestamp}}
-状态: {{type}}
+Project: {{projectDir}}
+Time: {{timestamp}}
+Status: {{type}}
 
-📝 您的问题:
+📝 Your Question:
 {{userQuestion}}
 
-🤖 Claude 的回复:
+🤖 Claude's Response:
 {{claudeResponse}}
 
-如何继续对话:
-要继续与 Claude Code 对话，请直接回复此邮件，在邮件正文中输入您的指令。
+How to Continue Conversation:
+To continue conversation with Claude Code, please reply to this email directly and enter your instructions in the email body.
 
-示例回复:
-• "请继续优化代码"
-• "生成单元测试"  
-• "解释这个函数的作用"
+Example Replies:
+• "Please continue optimizing the code"
+• "Generate unit tests"  
+• "Explain the purpose of this function"
 
-会话ID: {{sessionId}}
-安全提示: 请勿转发此邮件，会话将在24小时后自动过期
+Session ID: {{sessionId}}
+Security Note: Please do not forward this email, session will automatically expire after 24 hours
                 `
             },
             waiting: {
-                subject: '[TaskPing #{{token}}] Claude Code 等待输入 - {{project}}',
+                subject: '[TaskPing #{{token}}] Claude Code Waiting for Input - {{project}}',
                 html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
                     <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                         <h2 style="color: #2c3e50; margin-top: 0; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">
-                            ⏳ Claude Code 等待您的指导
+                            ⏳ Claude Code Waiting for Your Guidance
                         </h2>
                         
                         <div style="background-color: #ecf0f1; padding: 15px; border-radius: 6px; margin: 20px 0;">
                             <p style="margin: 0; color: #2c3e50;">
-                                <strong>项目:</strong> {{projectDir}}<br>
-                                <strong>时间:</strong> {{timestamp}}<br>
-                                <strong>状态:</strong> {{type}}
+                                <strong>Project:</strong> {{projectDir}}<br>
+                                <strong>Time:</strong> {{timestamp}}<br>
+                                <strong>Status:</strong> {{type}}
                             </p>
                         </div>
 
                         <div style="background-color: #fdf2e9; padding: 15px; border-radius: 6px; border-left: 4px solid #e67e22;">
-                            <h4 style="margin-top: 0; color: #e67e22;">⏳ 等待处理</h4>
+                            <h4 style="margin-top: 0; color: #e67e22;">⏳ Waiting for Processing</h4>
                             <p style="margin: 0; color: #2c3e50;">{{message}}</p>
                         </div>
 
                         <div style="margin: 25px 0; padding: 20px; background-color: #d1ecf1; border-radius: 6px; border-left: 4px solid #17a2b8;">
-                            <h3 style="margin-top: 0; color: #0c5460;">💬 请提供指导</h3>
+                            <h3 style="margin-top: 0; color: #0c5460;">💬 Please Provide Guidance</h3>
                             <p style="margin: 10px 0; color: #0c5460;">
-                                Claude 需要您的进一步指导。请<strong>回复此邮件</strong>告诉 Claude 下一步应该做什么。
+                                Claude needs your further guidance. Please <strong>reply to this email</strong> to tell Claude what to do next.
                             </p>
                         </div>
 
                         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; font-size: 12px; color: #6c757d;">
-                            <p style="margin: 5px 0;">会话ID: <code>{{sessionId}}</code></p>
-                            <p style="margin: 5px 0;">🔒 安全提示: 请勿转发此邮件，会话将在24小时后自动过期</p>
-                            <p style="margin: 5px 0;">📧 这是一封来自 TaskPing 的自动邮件</p>
+                            <p style="margin: 5px 0;">Session ID: <code>{{sessionId}}</code></p>
+                            <p style="margin: 5px 0;">🔒 Security note: Please do not forward this email, session will automatically expire after 24 hours</p>
+                            <p style="margin: 5px 0;">📧 This is an automated email from TaskPing</p>
                         </div>
                     </div>
                 </div>
                 `,
                 text: `
-[TaskPing #{{token}}] Claude Code 等待输入 - {{projectDir}}
+[TaskPing #{{token}}] Claude Code Waiting for Input - {{projectDir}}
 
-项目: {{projectDir}}
-时间: {{timestamp}}
-状态: {{type}}
+Project: {{projectDir}}
+Time: {{timestamp}}
+Status: {{type}}
 
-⏳ 等待处理: {{message}}
+⏳ Waiting for Processing: {{message}}
 
-Claude 需要您的进一步指导。请回复此邮件告诉 Claude 下一步应该做什么。
+Claude needs your further guidance. Please reply to this email to tell Claude what to do next.
 
-会话ID: {{sessionId}}
-安全提示: 请勿转发此邮件，会话将在24小时后自动过期
+Session ID: {{sessionId}}
+Security Note: Please do not forward this email, session will automatically expire after 24 hours
                 `
             }
         };
@@ -422,14 +422,14 @@ Claude 需要您的进一步指导。请回复此邮件告诉 Claude 下一步�
                 throw new Error('Email transporter not initialized');
             }
 
-            // 验证 SMTP 连接
+            // Verify SMTP connection
             await this.transporter.verify();
             
-            // 发送测试邮件
+            // Send test email
             const testNotification = {
                 type: 'completed',
-                title: 'TaskPing 测试',
-                message: '这是一封测试邮件，用于验证邮件通知功能是否正常工作。',
+                title: 'TaskPing Test',
+                message: 'This is a test email to verify that the email notification function is working properly.',
                 project: 'TaskPing-Test',
                 metadata: {
                     test: true,

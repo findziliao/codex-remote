@@ -1,6 +1,6 @@
 /**
  * Clipboard Automation
- * 通过剪贴板和键盘自动化来发送命令到Claude Code
+ * Send commands to Claude Code via clipboard and keyboard automation
  */
 
 const { spawn } = require('child_process');
@@ -12,16 +12,16 @@ class ClipboardAutomation {
     }
 
     /**
-     * 发送命令到Claude Code（通过剪贴板）
-     * @param {string} command - 要发送的命令
-     * @returns {Promise<boolean>} - 是否成功
+     * Send command to Claude Code (via clipboard)
+     * @param {string} command - Command to send
+     * @returns {Promise<boolean>} - Whether successful
      */
     async sendCommand(command) {
         try {
-            // 第一步：将命令复制到剪贴板
+            // Step 1: Copy command to clipboard
             await this._copyToClipboard(command);
             
-            // 第二步：激活Claude Code并粘贴
+            // Step 2: Activate Claude Code and paste
             const success = await this._activateAndPaste();
             
             if (success) {
@@ -29,7 +29,7 @@ class ClipboardAutomation {
                 return true;
             } else {
                 this.logger.warn('Failed to activate Claude Code, trying fallback');
-                // 尝试通用方案
+                // Try generic approach
                 return await this._sendToActiveWindow(command);
             }
             
@@ -40,7 +40,7 @@ class ClipboardAutomation {
     }
 
     /**
-     * 将文本复制到剪贴板
+     * Copy text to clipboard
      */
     async _copyToClipboard(text) {
         return new Promise((resolve, reject) => {
@@ -61,7 +61,7 @@ class ClipboardAutomation {
                 
                 pbcopy.on('error', reject);
             } else if (process.platform === 'linux') {
-                // Linux (需要 xclip 或 xsel)
+                // Linux (requires xclip or xsel)
                 const xclip = spawn('xclip', ['-selection', 'clipboard']);
                 xclip.stdin.write(text);
                 xclip.stdin.end();
@@ -70,7 +70,7 @@ class ClipboardAutomation {
                     if (code === 0) {
                         resolve();
                     } else {
-                        // 尝试 xsel
+                        // Try xsel
                         const xsel = spawn('xsel', ['--clipboard', '--input']);
                         xsel.stdin.write(text);
                         xsel.stdin.end();
@@ -91,7 +91,7 @@ class ClipboardAutomation {
     }
 
     /**
-     * 激活Claude Code并粘贴命令
+     * Activate Claude Code and paste command
      */
     async _activateAndPaste() {
         if (process.platform !== 'darwin') {
@@ -101,7 +101,7 @@ class ClipboardAutomation {
         return new Promise((resolve) => {
             const script = `
                 tell application "System Events"
-                    -- 尝试找到 Claude Code 相关的应用
+                    -- Try to find Claude Code related applications
                     set targetApps to {"Claude Code", "Terminal", "iTerm2", "iTerm", "Visual Studio Code", "Code", "Cursor"}
                     set foundApp to null
                     set appName to ""
@@ -117,24 +117,24 @@ class ClipboardAutomation {
                     end repeat
                     
                     if foundApp is not null then
-                        -- 激活应用
+                        -- Activate application
                         set frontmost of foundApp to true
                         delay 0.5
                         
-                        -- 尝试找到输入框并点击
+                        -- Try to find input box and click
                         try
-                            -- 对于一些应用，可能需要点击特定的输入区域
+                            -- For some applications, may need to click specific input area
                             if appName is "Claude Code" then
-                                -- Claude Code 特定的处理
-                                key code 125 -- 向下箭头，确保光标在输入框
+                                -- Claude Code specific handling
+                                key code 125 -- Down arrow, ensure cursor is in input box
                                 delay 0.2
                             end if
                             
-                            -- 粘贴内容
+                            -- Paste content
                             keystroke "v" using command down
                             delay 0.3
                             
-                            -- 发送命令（回车）
+                            -- Send command (Enter)
                             keystroke return
                             
                             return "success"
@@ -177,7 +177,7 @@ class ClipboardAutomation {
     }
 
     /**
-     * 发送到当前活动窗口（通用方案）
+     * Send to current active window (generic approach)
      */
     async _sendToActiveWindow(command) {
         if (process.platform !== 'darwin') {
@@ -187,10 +187,10 @@ class ClipboardAutomation {
         return new Promise((resolve) => {
             const script = `
                 tell application "System Events"
-                    -- 获取当前活动应用
+                    -- Get current active application
                     set activeApp to name of first application process whose frontmost is true
                     
-                    -- 粘贴命令到当前活动窗口
+                    -- Paste command to current active window
                     keystroke "v" using command down
                     delay 0.3
                     keystroke return
@@ -222,14 +222,14 @@ class ClipboardAutomation {
     }
 
     /**
-     * 检查是否支持剪贴板自动化
+     * Check if clipboard automation is supported
      */
     isSupported() {
         return process.platform === 'darwin' || process.platform === 'linux';
     }
 
     /**
-     * 获取当前剪贴板内容（用于测试）
+     * Get current clipboard content (for testing)
      */
     async getClipboardContent() {
         if (process.platform === 'darwin') {

@@ -1,5 +1,5 @@
 /**
- * 对话追踪器 - 用于捕获用户问题和Claude回复
+ * Conversation Tracker - Used to capture user questions and Claude responses
  */
 
 const fs = require('fs');
@@ -18,7 +18,7 @@ class ConversationTracker {
         }
     }
     
-    // 记录用户问题
+    // Record user question
     recordUserMessage(sessionId, message) {
         const conversations = this.loadConversations();
         if (!conversations[sessionId]) {
@@ -37,7 +37,7 @@ class ConversationTracker {
         this.saveConversations(conversations);
     }
     
-    // 记录Claude回复
+    // Record Claude response
     recordClaudeResponse(sessionId, response) {
         const conversations = this.loadConversations();
         if (!conversations[sessionId]) {
@@ -56,7 +56,7 @@ class ConversationTracker {
         this.saveConversations(conversations);
     }
     
-    // 获取最近的对话内容
+    // Get recent conversation content
     getRecentConversation(sessionId, limit = 2) {
         const conversations = this.loadConversations();
         const session = conversations[sessionId];
@@ -65,11 +65,11 @@ class ConversationTracker {
             return { userQuestion: '', claudeResponse: '' };
         }
         
-        const messages = session.messages.slice(-limit * 2); // 获取最近的用户-Claude对话
+        const messages = session.messages.slice(-limit * 2); // Get recent user-Claude conversation
         let userQuestion = '';
         let claudeResponse = '';
         
-        // 从后往前找最近的用户问题和Claude回复
+        // Find most recent user question and Claude response from back to front
         for (let i = messages.length - 1; i >= 0; i--) {
             const msg = messages[i];
             if (msg.type === 'claude' && !claudeResponse) {
@@ -82,12 +82,12 @@ class ConversationTracker {
         }
         
         return {
-            userQuestion: userQuestion || '未记录的用户问题',
-            claudeResponse: claudeResponse || '未记录的Claude回复'
+            userQuestion: userQuestion || 'Unrecorded user question',
+            claudeResponse: claudeResponse || 'Unrecorded Claude response'
         };
     }
     
-    // 清理过期对话（超过7天）
+    // Clean up expired conversations (older than 7 days)
     cleanupOldConversations() {
         const conversations = this.loadConversations();
         const now = new Date();

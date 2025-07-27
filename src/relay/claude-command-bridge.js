@@ -1,6 +1,6 @@
 /**
  * Claude Command Bridge
- * 通过文件系统与Claude Code进行通信的桥接器
+ * Bridge for communicating with Claude Code via file system
  */
 
 const fs = require('fs');
@@ -25,17 +25,17 @@ class ClaudeCommandBridge {
     }
 
     /**
-     * 发送命令给Claude Code
-     * @param {string} command - 要执行的命令
-     * @param {string} sessionId - 会话ID
-     * @returns {Promise<boolean>} - 是否成功
+     * Send command to Claude Code
+     * @param {string} command - Command to execute
+     * @param {string} sessionId - Session ID
+     * @returns {Promise<boolean>} - Whether successful
      */
     async sendCommand(command, sessionId) {
         try {
             const timestamp = Date.now();
             const commandId = `${sessionId}_${timestamp}`;
             
-            // 创建命令文件
+            // Create command file
             const commandFile = path.join(this.commandsDir, `${commandId}.json`);
             const commandData = {
                 id: commandId,
@@ -48,13 +48,13 @@ class ClaudeCommandBridge {
             
             fs.writeFileSync(commandFile, JSON.stringify(commandData, null, 2));
             
-            // 创建通知文件 (Claude Code可以监控这个文件变化)
+            // Create notification file (Claude Code can monitor this file for changes)
             const notificationFile = path.join(this.commandsDir, '.new_command');
             fs.writeFileSync(notificationFile, commandId);
             
             this.logger.info(`Command sent via file bridge: ${commandId}`);
             
-            // 尝试使用系统通知
+            // Try to use system notification
             await this._sendSystemNotification(command, commandId);
             
             return true;
@@ -67,18 +67,18 @@ class ClaudeCommandBridge {
 
     async _sendSystemNotification(command, commandId) {
         try {
-            const title = 'TaskPing - 新邮件命令';
-            const body = `命令: ${command.length > 50 ? command.substring(0, 50) + '...' : command}\n\n点击查看详情或在Claude Code中输入命令`;
+            const title = 'TaskPing - New Email Command';
+            const body = `Command: ${command.length > 50 ? command.substring(0, 50) + '...' : command}\n\nClick to view details or enter command in Claude Code`;
             
             if (process.platform === 'darwin') {
-                // macOS 通知
+                // macOS notification
                 const script = `
                     display notification "${body.replace(/"/g, '\\"')}" with title "${title}" sound name "default"
                 `;
                 const { spawn } = require('child_process');
                 spawn('osascript', ['-e', script]);
             } else if (process.platform === 'linux') {
-                // Linux 通知
+                // Linux notification
                 const { spawn } = require('child_process');
                 spawn('notify-send', [title, body]);
             }
@@ -90,8 +90,8 @@ class ClaudeCommandBridge {
     }
 
     /**
-     * 获取待处理的命令
-     * @returns {Array} 命令列表
+     * Get pending commands
+     * @returns {Array} Command list
      */
     getPendingCommands() {
         try {
@@ -121,10 +121,10 @@ class ClaudeCommandBridge {
     }
 
     /**
-     * 标记命令为已处理
-     * @param {string} commandId - 命令ID
-     * @param {string} status - 状态 (completed/failed)
-     * @param {string} response - 响应内容
+     * Mark command as processed
+     * @param {string} commandId - Command ID
+     * @param {string} status - Status (completed/failed)
+     * @param {string} response - Response content
      */
     markCommandProcessed(commandId, status = 'completed', response = '') {
         try {
@@ -136,11 +136,11 @@ class ClaudeCommandBridge {
                 commandData.processedAt = new Date().toISOString();
                 commandData.response = response;
                 
-                // 保存到响应目录
+                // Save to response directory
                 const responseFile = path.join(this.responseDir, `${commandId}.json`);
                 fs.writeFileSync(responseFile, JSON.stringify(commandData, null, 2));
                 
-                // 删除原命令文件
+                // Delete original command file
                 fs.unlinkSync(commandFile);
                 
                 this.logger.info(`Command ${commandId} marked as ${status}`);
@@ -151,8 +151,8 @@ class ClaudeCommandBridge {
     }
 
     /**
-     * 清理旧的命令和响应文件
-     * @param {number} maxAge - 最大保留时间(小时)
+     * Clean up old command and response files
+     * @param {number} maxAge - Maximum retention time (hours)
      */
     cleanup(maxAge = 24) {
         const cutoff = Date.now() - (maxAge * 60 * 60 * 1000);
@@ -182,7 +182,7 @@ class ClaudeCommandBridge {
     }
 
     /**
-     * 获取桥接器状态
+     * Get bridge status
      */
     getStatus() {
         try {

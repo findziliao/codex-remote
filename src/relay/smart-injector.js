@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * 智能命令注入器 - 多种方式确保命令能够到达Claude Code
+ * Smart Command Injector - Multiple methods to ensure commands reach Claude Code
  */
 
 const { exec, spawn } = require('child_process');
@@ -22,7 +22,7 @@ class SmartInjector {
     }
     
     async injectCommand(token, command) {
-        this.log.info(`🎯 智能注入命令: ${command.slice(0, 50)}...`);
+        this.log.info(`🎯 Smart command injection: ${command.slice(0, 50)}...`);
         
         const methods = [
             this.tryAppleScriptInjection.bind(this),
@@ -32,31 +32,31 @@ class SmartInjector {
         ];
         
         for (let i = 0; i < methods.length; i++) {
-            const methodName = ['AppleScript自动注入', '文件拖拽注入', '持久通知注入', '紧急剪贴板'][i];
+            const methodName = ['AppleScript Auto-injection', 'File Drag Injection', 'Persistent Notification Injection', 'Emergency Clipboard'][i];
             
             try {
-                this.log.info(`🔄 尝试方法 ${i + 1}: ${methodName}`);
+                this.log.info(`🔄 Trying method ${i + 1}: ${methodName}`);
                 const result = await methods[i](token, command);
                 
                 if (result.success) {
-                    this.log.info(`✅ ${methodName}成功: ${result.message}`);
+                    this.log.info(`✅ ${methodName} successful: ${result.message}`);
                     return true;
                 } else {
-                    this.log.warn(`⚠️ ${methodName}失败: ${result.error}`);
+                    this.log.warn(`⚠️ ${methodName} failed: ${result.error}`);
                 }
             } catch (error) {
-                this.log.error(`❌ ${methodName}异常: ${error.message}`);
+                this.log.error(`❌ ${methodName} exception: ${error.message}`);
             }
         }
         
-        this.log.error('🚨 所有注入方法都失败了');
+        this.log.error('🚨 All injection methods failed');
         return false;
     }
     
-    // 方法1: AppleScript自动注入
+    // Method 1: AppleScript Auto-injection
     async tryAppleScriptInjection(token, command) {
         return new Promise((resolve) => {
-            // 先复制到剪贴板
+            // First copy to clipboard
             this.copyToClipboard(command).then(() => {
                 const script = `
                 tell application "System Events"
@@ -87,7 +87,7 @@ class SmartInjector {
                 
                 exec(`osascript -e '${script}'`, (error, stdout) => {
                     if (error) {
-                        if (error.message.includes('1002') || error.message.includes('不允许')) {
+                        if (error.message.includes('1002') || error.message.includes('not allowed')) {
                             resolve({ success: false, error: 'permission_denied' });
                         } else {
                             resolve({ success: false, error: error.message });
@@ -95,7 +95,7 @@ class SmartInjector {
                     } else {
                         const result = stdout.trim();
                         if (result === 'success') {
-                            resolve({ success: true, message: '自动粘贴成功' });
+                            resolve({ success: true, message: 'Auto-paste successful' });
                         } else {
                             resolve({ success: false, error: result });
                         }
@@ -105,27 +105,27 @@ class SmartInjector {
         });
     }
     
-    // 方法2: 文件拖拽注入
+    // Method 2: File Drag Injection
     async tryFileDropInjection(token, command) {
         return new Promise((resolve) => {
             try {
-                // 创建临时命令文件
+                // Create temporary command file
                 const fileName = `taskping-command-${token}.txt`;
                 const filePath = path.join(this.tempDir, fileName);
                 
                 fs.writeFileSync(filePath, command);
                 
-                // 复制文件路径到剪贴板
+                // Copy file path to clipboard
                 this.copyToClipboard(filePath).then(() => {
-                    // 发送通知指导用户
+                    // Send notification to guide user
                     const notificationScript = `
-                        display notification "💡 命令文件已创建并复制路径到剪贴板！\\n1. 在Finder中按Cmd+G并粘贴路径\\n2. 将文件拖拽到Claude Code窗口" with title "TaskPing 文件注入" subtitle "拖拽文件: ${fileName}" sound name "Glass"
+                        display notification "💡 Command file created and path copied to clipboard!\\n1. Press Cmd+G in Finder and paste path\\n2. Drag file to Claude Code window" with title "TaskPing File Injection" subtitle "Drag file: ${fileName}" sound name "Glass"
                     `;
                     
                     exec(`osascript -e '${notificationScript}'`, () => {
-                        // 尝试自动打开Finder到目标目录
+                        // Try to automatically open Finder to target directory
                         exec(`open "${this.tempDir}"`, () => {
-                            resolve({ success: true, message: '文件已创建，通知已发送' });
+                            resolve({ success: true, message: 'File created, notification sent' });
                         });
                     });
                 });
@@ -136,15 +136,15 @@ class SmartInjector {
         });
     }
     
-    // 方法3: 持久通知注入
+    // Method 3: Persistent Notification Injection
     async tryClipboardWithPersistentNotification(token, command) {
         return new Promise((resolve) => {
             this.copyToClipboard(command).then(() => {
-                // 发送多次通知确保用户看到
+                // Send multiple notifications to ensure user sees them
                 const notifications = [
-                    { delay: 0, sound: 'Basso', message: '🚨 邮件命令已复制！请立即粘贴到Claude Code (Cmd+V)' },
-                    { delay: 3000, sound: 'Ping', message: '⏰ 提醒：命令仍在剪贴板中，请粘贴执行' },
-                    { delay: 8000, sound: 'Purr', message: '💡 最后提醒：在Claude Code中按Cmd+V粘贴命令' }
+                    { delay: 0, sound: 'Basso', message: '🚨 Email command copied! Please paste immediately to Claude Code (Cmd+V)' },
+                    { delay: 3000, sound: 'Ping', message: '⏰ Reminder: Command still in clipboard, please paste and execute' },
+                    { delay: 8000, sound: 'Purr', message: '💡 Final reminder: Press Cmd+V in Claude Code to paste command' }
                 ];
                 
                 let completedNotifications = 0;
@@ -152,13 +152,13 @@ class SmartInjector {
                 notifications.forEach((notif, index) => {
                     setTimeout(() => {
                         const script = `
-                            display notification "${notif.message}" with title "TaskPing 持久提醒 ${index + 1}/3" subtitle "${command.slice(0, 30)}..." sound name "${notif.sound}"
+                            display notification "${notif.message}" with title "TaskPing Persistent Reminder ${index + 1}/3" subtitle "${command.slice(0, 30)}..." sound name "${notif.sound}"
                         `;
                         
                         exec(`osascript -e '${script}'`, () => {
                             completedNotifications++;
                             if (completedNotifications === notifications.length) {
-                                resolve({ success: true, message: '持久通知序列完成' });
+                                resolve({ success: true, message: 'Persistent notification sequence completed' });
                             }
                         });
                     }, notif.delay);
@@ -170,31 +170,31 @@ class SmartInjector {
         });
     }
     
-    // 方法4: 紧急剪贴板（最后手段）
+    // Method 4: Emergency Clipboard (last resort)
     async tryUrgentClipboard(token, command) {
         return new Promise((resolve) => {
             this.copyToClipboard(command).then(() => {
-                // 创建桌面快捷文件
+                // Create desktop shortcut file
                 const desktopPath = path.join(require('os').homedir(), 'Desktop');
                 const shortcutContent = `#!/bin/bash
-echo "TaskPing命令: ${command}"
-echo "已复制到剪贴板，请在Claude Code中按Cmd+V粘贴"
+echo "TaskPing Command: ${command}"
+echo "Copied to clipboard, please press Cmd+V in Claude Code to paste"
 echo "${command}" | pbcopy
-echo "✅ 命令已刷新到剪贴板"
+echo "✅ Command refreshed to clipboard"
 `;
                 
                 const shortcutPath = path.join(desktopPath, `TaskPing-${token}.command`);
                 
                 try {
                     fs.writeFileSync(shortcutPath, shortcutContent);
-                    fs.chmodSync(shortcutPath, '755'); // 可执行权限
+                    fs.chmodSync(shortcutPath, '755'); // Executable permission
                     
                     const script = `
-                        display notification "🆘 紧急模式：桌面已创建快捷文件 TaskPing-${token}.command\\n双击可重新复制命令到剪贴板" with title "TaskPing 紧急模式" subtitle "命令: ${command.slice(0, 20)}..." sound name "Sosumi"
+                        display notification "🆘 Emergency Mode: Desktop shortcut file TaskPing-${token}.command created\\nDouble-click to re-copy command to clipboard" with title "TaskPing Emergency Mode" subtitle "Command: ${command.slice(0, 20)}..." sound name "Sosumi"
                     `;
                     
                     exec(`osascript -e '${script}'`, () => {
-                        resolve({ success: true, message: '紧急模式：桌面快捷文件已创建' });
+                        resolve({ success: true, message: 'Emergency mode: Desktop shortcut file created' });
                     });
                     
                 } catch (error) {
@@ -207,7 +207,7 @@ echo "✅ 命令已刷新到剪贴板"
         });
     }
     
-    // 辅助方法：复制到剪贴板
+    // Helper method: Copy to clipboard
     async copyToClipboard(text) {
         return new Promise((resolve, reject) => {
             const pbcopy = spawn('pbcopy');
@@ -224,7 +224,7 @@ echo "✅ 命令已刷新到剪贴板"
         });
     }
     
-    // 清理临时文件
+    // Clean up temporary files
     cleanup() {
         try {
             if (fs.existsSync(this.tempDir)) {
@@ -236,14 +236,14 @@ echo "✅ 命令已刷新到剪贴板"
                     const stats = fs.statSync(filePath);
                     const age = now - stats.mtime.getTime();
                     
-                    // 删除超过1小时的临时文件
+                    // Delete temporary files older than 1 hour
                     if (age > 60 * 60 * 1000) {
                         fs.unlinkSync(filePath);
                     }
                 });
             }
         } catch (error) {
-            this.log.warn(`清理临时文件失败: ${error.message}`);
+            this.log.warn(`Failed to clean up temporary files: ${error.message}`);
         }
     }
 }

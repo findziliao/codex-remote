@@ -1,6 +1,6 @@
 /**
- * Claude Code 专用自动化
- * 专门针对 Claude Code 的完全自动化解决方案
+ * Claude Code Dedicated Automation
+ * Complete automation solution specifically designed for Claude Code
  */
 
 const { spawn } = require('child_process');
@@ -12,26 +12,26 @@ class ClaudeAutomation {
     }
 
     /**
-     * 完全自动化发送命令到 Claude Code
-     * @param {string} command - 要发送的命令
-     * @param {string} sessionId - 会话ID
-     * @returns {Promise<boolean>} - 是否成功
+     * Fully automated command sending to Claude Code
+     * @param {string} command - Command to send
+     * @param {string} sessionId - Session ID
+     * @returns {Promise<boolean>} - Whether successful
      */
     async sendCommand(command, sessionId = '') {
         try {
             this.logger.info(`Sending command to Claude Code: ${command.substring(0, 50)}...`);
             
-            // 首先复制命令到剪贴板
+            // First copy command to clipboard
             await this._copyToClipboard(command);
             
-            // 然后执行完全自动化的粘贴和执行
+            // Then execute fully automated paste and execution
             const success = await this._fullAutomation(command);
             
             if (success) {
                 this.logger.info('Command sent and executed successfully');
                 return true;
             } else {
-                // 如果失败，尝试备选方案
+                // If failed, try fallback option
                 return await this._fallbackAutomation(command);
             }
             
@@ -42,7 +42,7 @@ class ClaudeAutomation {
     }
 
     /**
-     * 复制命令到剪贴板
+     * Copy command to clipboard
      */
     async _copyToClipboard(command) {
         return new Promise((resolve, reject) => {
@@ -64,7 +64,7 @@ class ClaudeAutomation {
     }
 
     /**
-     * 完全自动化方案
+     * Full automation solution
      */
     async _fullAutomation(command) {
         if (process.platform !== 'darwin') {
@@ -74,16 +74,16 @@ class ClaudeAutomation {
         return new Promise((resolve) => {
             const script = `
                 tell application "System Events"
-                    -- 定义可能的 Claude Code 应用名称
+                    -- Define possible Claude Code application names
                     set claudeApps to {"Claude", "Claude Code", "Claude Desktop", "Anthropic Claude"}
                     set terminalApps to {"Terminal", "iTerm2", "iTerm", "Warp Terminal", "Warp"}
                     set codeApps to {"Visual Studio Code", "Code", "Cursor", "Sublime Text", "Atom"}
                     
-                    -- 首先尝试找到 Claude Code
+                    -- First try to find Claude Code
                     set targetApp to null
                     set appName to ""
                     
-                    -- 检查 Claude 应用
+                    -- Check Claude applications
                     repeat with app in claudeApps
                         try
                             if application process app exists then
@@ -94,7 +94,7 @@ class ClaudeAutomation {
                         end try
                     end repeat
                     
-                    -- 如果没找到 Claude，检查终端应用
+                    -- If Claude not found, check terminal applications
                     if targetApp is null then
                         repeat with app in terminalApps
                             try
@@ -107,7 +107,7 @@ class ClaudeAutomation {
                         end repeat
                     end if
                     
-                    -- 如果还没找到，检查代码编辑器
+                    -- If still not found, check code editors
                     if targetApp is null then
                         repeat with app in codeApps
                             try
@@ -121,46 +121,46 @@ class ClaudeAutomation {
                     end if
                     
                     if targetApp is not null then
-                        -- 激活应用
+                        -- Activate application
                         set frontmost of targetApp to true
                         delay 0.8
                         
-                        -- 等待应用完全激活
+                        -- Wait for application to fully activate
                         repeat while (frontmost of targetApp) is false
                             delay 0.1
                         end repeat
                         
-                        -- 根据不同应用类型执行不同操作
+                        -- Execute different operations based on application type
                         if appName contains "Claude" then
-                            -- Claude Code 特定操作
+                            -- Claude Code specific operations
                             try
-                                -- 尝试点击输入框
+                                -- Try to click input box
                                 click (first text field of window 1)
                                 delay 0.3
                             on error
-                                -- 如果没有文本框，尝试按键导航
-                                key code 125 -- 向下箭头
+                                -- If no text box, try keyboard navigation
+                                key code 125 -- Down arrow
                                 delay 0.2
                             end try
                             
-                            -- 清空当前内容并粘贴新命令
+                            -- Clear current content and paste new command
                             keystroke "a" using command down
                             delay 0.2
                             keystroke "v" using command down
                             delay 0.5
                             
-                            -- 执行命令
+                            -- Execute command
                             keystroke return
                             
                         else if appName contains "Terminal" or appName contains "iTerm" or appName contains "Warp" then
-                            -- 终端应用操作
+                            -- Terminal application operations
                             delay 0.5
                             keystroke "v" using command down
                             delay 0.3
                             keystroke return
                             
                         else
-                            -- 其他应用（代码编辑器等）
+                            -- Other applications (code editors, etc.)
                             delay 0.5
                             keystroke "v" using command down
                             delay 0.3
@@ -205,7 +205,7 @@ class ClaudeAutomation {
     }
 
     /**
-     * 备选自动化方案 - 更强制性的方法
+     * Fallback automation solution - more forceful method
      */
     async _fallbackAutomation(command) {
         if (process.platform !== 'darwin') {
@@ -213,7 +213,7 @@ class ClaudeAutomation {
         }
 
         return new Promise((resolve) => {
-            // 更强制性的方案，直接输入文本
+            // More forceful approach, directly input text
             const escapedCommand = command
                 .replace(/\\/g, '\\\\')
                 .replace(/"/g, '\\"')
@@ -222,29 +222,29 @@ class ClaudeAutomation {
 
             const script = `
                 tell application "System Events"
-                    -- 获取当前前台应用
+                    -- Get current foreground application
                     set frontApp to first application process whose frontmost is true
                     set appName to name of frontApp
                     
-                    -- 等待一下确保应用响应
+                    -- Wait a moment to ensure application responds
                     delay 1
                     
-                    -- 直接输入命令文本（不依赖剪贴板）
+                    -- Directly input command text (not dependent on clipboard)
                     try
-                        -- 先清空可能的现有内容
+                        -- First clear possible existing content
                         keystroke "a" using command down
                         delay 0.2
                         
-                        -- 输入命令
+                        -- Input command
                         keystroke "${escapedCommand}"
                         delay 0.5
                         
-                        -- 执行
+                        -- Execute
                         keystroke return
                         
                         return "typed_success:" & appName
                     on error errorMsg
-                        -- 如果直接输入失败，尝试粘贴
+                        -- If direct input fails, try paste
                         try
                             keystroke "v" using command down
                             delay 0.3
@@ -281,7 +281,7 @@ class ClaudeAutomation {
     }
 
     /**
-     * 专门激活 Claude Code 应用
+     * Specifically activate Claude Code application
      */
     async activateClaudeCode() {
         if (process.platform !== 'darwin') {
@@ -328,7 +328,7 @@ class ClaudeAutomation {
     }
 
     /**
-     * 检查系统权限并尝试请求
+     * Check system permissions and attempt to request
      */
     async requestPermissions() {
         if (process.platform !== 'darwin') {
@@ -336,7 +336,7 @@ class ClaudeAutomation {
         }
 
         try {
-            // 尝试一个简单的操作来触发权限请求
+            // Try a simple operation to trigger permission request
             const script = `
                 tell application "System Events"
                     try
@@ -381,7 +381,7 @@ class ClaudeAutomation {
     }
 
     /**
-     * 获取状态信息
+     * Get status information
      */
     getStatus() {
         return {

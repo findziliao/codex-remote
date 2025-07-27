@@ -1,14 +1,14 @@
 /**
- * 发送测试邮件回复到relay服务
+ * Send test email reply to relay service
  */
 
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 async function sendTestReply() {
-    console.log('📧 发送测试邮件回复...\n');
+    console.log('📧 Sending test email reply...\n');
     
-    // 创建测试用的SMTP传输器（使用Gmail）
+    // Create test SMTP transporter (using Gmail)
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -17,32 +17,32 @@ async function sendTestReply() {
         }
     });
     
-    // 使用最新的token
-    const testToken = 'V5UPZ1UE'; // 来自session-map.json的最新token
+    // Use latest token
+    const testToken = 'V5UPZ1UE'; // Latest token from session-map.json
     
     const mailOptions = {
         from: 'jiaxicui446@gmail.com',
         to: 'noreply@pandalla.ai',
-        subject: `Re: [TaskPing #${testToken}] Claude Code 任务完成 - TaskPing`,
-        text: '请解释一下量子计算的基本原理',
+        subject: `Re: [TaskPing #${testToken}] Claude Code Task Completed - TaskPing`,
+        text: 'Please explain the basic principles of quantum computing',
         replyTo: 'jiaxicui446@gmail.com'
     };
     
     try {
         const info = await transporter.sendMail(mailOptions);
-        console.log('✅ 测试邮件发送成功!');
+        console.log('✅ Test email sent successfully!');
         console.log(`📧 Message ID: ${info.messageId}`);
         console.log(`📋 Token: ${testToken}`);
         console.log(`💬 Command: ${mailOptions.text}`);
-        console.log('\n🔍 现在监控relay服务日志...');
+        console.log('\n🔍 Now monitoring relay service logs...');
         
-        // 等待几秒让邮件被处理
+        // Wait a few seconds for email processing
         setTimeout(() => {
-            console.log('\n📋 请检查relay-debug.log文件查看处理日志');
+            console.log('\n📋 Please check relay-debug.log file for processing logs');
         }, 5000);
         
     } catch (error) {
-        console.error('❌ 邮件发送失败:', error.message);
+        console.error('❌ Email sending failed:', error.message);
     }
 }
 

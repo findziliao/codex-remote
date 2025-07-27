@@ -1,6 +1,6 @@
 /**
- * 简单自动化方案
- * 使用更简单的方式来处理邮件回复命令
+ * Simple Automation Solution
+ * Use simpler methods to handle email reply commands
  */
 
 const { spawn } = require('child_process');
@@ -16,23 +16,23 @@ class SimpleAutomation {
     }
 
     /**
-     * 发送命令 - 使用多种简单方式
-     * @param {string} command - 要发送的命令
-     * @param {string} sessionId - 会话ID
-     * @returns {Promise<boolean>} - 是否成功
+     * Send command - using multiple simple methods
+     * @param {string} command - Command to send
+     * @param {string} sessionId - Session ID
+     * @returns {Promise<boolean>} - Whether successful
      */
     async sendCommand(command, sessionId = '') {
         try {
-            // 方法1: 保存到文件，用户可以手动复制
+            // Method 1: Save to file, user can manually copy
             await this._saveCommandToFile(command, sessionId);
             
-            // 方法2: 复制到剪贴板
+            // Method 2: Copy to clipboard
             const clipboardSuccess = await this._copyToClipboard(command);
             
-            // 方法3: 发送富通知（包含命令内容）
+            // Method 3: Send rich notification (including command content)
             const notificationSuccess = await this._sendRichNotification(command, sessionId);
             
-            // 方法4: 尝试简单的自动化（不依赖复杂权限）
+            // Method 4: Try simple automation (no complex permissions needed)
             const autoSuccess = await this._trySimpleAutomation(command);
             
             if (clipboardSuccess || notificationSuccess || autoSuccess) {
@@ -50,21 +50,21 @@ class SimpleAutomation {
     }
 
     /**
-     * 保存命令到文件
+     * Save command to file
      */
     async _saveCommandToFile(command, sessionId) {
         try {
             const timestamp = new Date().toLocaleString('zh-CN');
-            const content = `# TaskPing 邮件回复命令
-# 时间: ${timestamp}
-# 会话ID: ${sessionId}
+            const content = `# TaskPing Email Reply Command
+# Time: ${timestamp}
+# Session ID: ${sessionId}
 # 
-# 请复制下面的命令到 Claude Code 中执行:
+# Please copy the command below to Claude Code for execution:
 
 ${command}
 
 # ===============================
-# 执行完成后可以删除此文件
+# This file can be deleted after execution
 `;
             
             fs.writeFileSync(this.commandFile, content, 'utf8');
@@ -77,7 +77,7 @@ ${command}
     }
 
     /**
-     * 复制到剪贴板
+     * Copy to clipboard
      */
     async _copyToClipboard(command) {
         try {
@@ -107,24 +107,24 @@ ${command}
     }
 
     /**
-     * 发送富通知
+     * Send rich notification
      */
     async _sendRichNotification(command, sessionId) {
         try {
             if (process.platform === 'darwin') {
                 const shortCommand = command.length > 50 ? command.substring(0, 50) + '...' : command;
                 
-                // 创建详细的通知
+                // Create detailed notification
                 const script = `
                     set commandText to "${command.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"
                     
-                    display notification "命令已复制到剪贴板，请粘贴到 Claude Code 中" with title "TaskPing - 新邮件命令" subtitle "${shortCommand.replace(/"/g, '\\"')}" sound name "default"
+                    display notification "Command copied to clipboard, please paste to Claude Code" with title "TaskPing - New Email Command" subtitle "${shortCommand.replace(/"/g, '\\"')}" sound name "default"
                     
-                    -- 同时显示对话框（可选，用户可以取消）
+                    -- Also show dialog (optional, user can cancel)
                     try
-                        set userChoice to display dialog "收到新的邮件命令:" & return & return & commandText buttons {"打开命令文件", "取消", "已粘贴"} default button "已粘贴" with title "TaskPing 邮件中继" giving up after 10
+                        set userChoice to display dialog "Received new email command:" & return & return & commandText buttons {"Open Command File", "Cancel", "Pasted"} default button "Pasted" with title "TaskPing Email Relay" giving up after 10
                         
-                        if button returned of userChoice is "打开命令文件" then
+                        if button returned of userChoice is "Open Command File" then
                             do shell script "open -t '${this.commandFile}'"
                         end if
                     end try
@@ -140,7 +140,7 @@ ${command}
                         } else {
                             this.logger.warn('Rich notification failed, trying simple notification');
                             this._sendSimpleNotification(command);
-                            resolve(true); // 即使失败也算成功，因为有备选方案
+                            resolve(true); // Consider successful even if failed, because there are backup options
                         }
                     });
                     
@@ -158,12 +158,12 @@ ${command}
     }
 
     /**
-     * 发送简单通知
+     * Send simple notification
      */
     async _sendSimpleNotification(command) {
         try {
             const shortCommand = command.length > 50 ? command.substring(0, 50) + '...' : command;
-            const script = `display notification "命令: ${shortCommand.replace(/"/g, '\\"')}" with title "TaskPing - 邮件命令" sound name "default"`;
+            const script = `display notification "Command: ${shortCommand.replace(/"/g, '\\"')}" with title "TaskPing - Email Command" sound name "default"`;
             
             const osascript = spawn('osascript', ['-e', script]);
             osascript.on('close', () => {
@@ -175,19 +175,19 @@ ${command}
     }
 
     /**
-     * 尝试简单自动化（无需复杂权限）
+     * Try simple automation (no complex permissions needed)
      */
     async _trySimpleAutomation(command) {
         try {
             if (process.platform === 'darwin') {
-                // 只尝试最基本的操作，不强制要求权限
+                // Only try basic operations, don't force permissions
                 const script = `
                     try
                         tell application "System Events"
-                            -- 尝试获取前台应用
+                            -- Try to get frontmost application
                             set frontApp to name of first application process whose frontmost is true
                             
-                            -- 如果是终端或代码编辑器，尝试粘贴
+                            -- If it's terminal or code editor, try to paste
                             if frontApp contains "Terminal" or frontApp contains "iTerm" or frontApp contains "Code" or frontApp contains "Claude" then
                                 keystroke "v" using command down
                                 delay 0.2
@@ -231,7 +231,7 @@ ${command}
     }
 
     /**
-     * 打开命令文件
+     * Open command file
      */
     async openCommandFile() {
         try {
@@ -250,7 +250,7 @@ ${command}
     }
 
     /**
-     * 清理命令文件
+     * Clean up command files
      */
     cleanupCommandFile() {
         try {
@@ -264,7 +264,7 @@ ${command}
     }
 
     /**
-     * 获取状态
+     * Get status
      */
     getStatus() {
         return {
