@@ -1,217 +1,130 @@
-# TaskPing - Intelligent Email Automation Assistant for Claude Code
+# Claude Code Remote - 远程邮件控制系统
 
-TaskPing is an intelligent email automation tool that deeply integrates Claude Code with email systems. By monitoring email replies, it automatically inputs reply content into corresponding Claude Code sessions for execution, allowing you to remotely control Claude Code from anywhere via email.
+一个强大的 Claude Code 远程控制工具，让你可以通过邮件回复来远程操控 Claude Code，实现真正的无人值守智能编程助手。
 
-## 🚀 Core Features
+## 🌟 核心功能
 
-### 📧 Smart Email Notifications
-- **Auto Detection**: Based on Claude Code official hooks mechanism, automatically identifies task completion and waiting input states
-- **Real-time Notifications**: Automatically sends emails when tasks complete, including complete user questions and Claude responses
-- **Session Binding**: Emails are bound to specific tmux sessions, ensuring replies go to the correct Claude Code window
+- 📧 **智能邮件通知** - Claude 完成任务时自动发送邮件通知
+- 🔄 **邮件回复控制** - 回复邮件内容自动注入到 Claude Code 中执行
+- 📱 **完全远程操作** - 在任何地方通过邮件控制你的 Claude Code
+- 🛡️ **安全可靠** - 白名单机制确保只有授权用户可以发送命令
+- 📋 **多行支持** - 支持复杂的多行命令和格式化内容
 
-### 🔄 Email Reply Auto-Execution
-- **Remote Control**: Directly reply to emails, content automatically inputs into corresponding Claude Code sessions
-- **Smart Injection**: Automatically detects tmux session state, precisely injects commands into correct windows
-- **Duplicate Prevention**: Implements email deduplication mechanism to avoid processing the same email twice
+## 🚀 新手完整教程
 
-### 🛡️ Stability Assurance
-- **Single Instance**: Ensures only one email monitoring process runs, avoiding duplicate processing
-- **State Management**: Comprehensive session state tracking and error recovery mechanisms
-- **Security Verification**: Email source verification, ensures only authorized user replies are processed
+### 📋 前置要求
 
-## 📦 Installation and Setup
+在开始之前，请确保你的系统满足以下要求：
 
-### 1. Clone and Install
+- ✅ **macOS** (推荐) 或 Linux
+- ✅ **Node.js 14+** 
+- ✅ **Claude Code** 已安装并可正常使用
+- ✅ **tmux** 已安装 (`brew install tmux`)
+- ✅ **邮箱账号** (Gmail、Outlook 或其他 SMTP/IMAP 支持的邮箱)
+
+### 🎯 第一步：快速体验（5分钟）
+
 ```bash
-git clone https://github.com/JessyTsui/TaskPing.git
-cd TaskPing
+# 1. 克隆项目
+git clone https://github.com/JessyTsui/Claude-Code-Remote.git
+cd Claude-Code-Remote
+
+# 2. 安装依赖
 npm install
-```
 
-### 2. Test Basic Functionality
-```bash
-# Test the main program
+# 3. 测试基本功能
 node taskping.js --help
-
-# Check system status  
 node taskping.js status
-
-# Test notifications (desktop only, no email config needed)
 node taskping.js test
 ```
 
-### 3. Configure Email (Required for Remote Control)
+如果看到桌面通知弹出，说明基础功能正常！
 
-#### 📧 Email Configuration (.env file)
-Create and edit the `.env` file in project root:
+### 📧 第二步：配置邮件（10分钟）
+
+#### 2.1 创建邮件配置文件
 
 ```bash
-# Copy example configuration
-cp .env.example .env
-
-# Edit with your settings
-nano .env
+# 在项目根目录创建 .env 文件
+touch .env
 ```
 
-**Required .env Configuration:**
+#### 2.2 编辑 .env 文件
+
+将以下内容复制到 `.env` 文件中，并替换为你的邮箱信息：
+
 ```env
-# ===== SMTP (发送邮件) =====
-SMTP_HOST=smtp.your-domain.com
-SMTP_PORT=465
-SMTP_SECURE=true
-SMTP_USER=your-email@domain.com
+# ===== SMTP 发送邮件配置 =====
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 
-# ===== IMAP (接收邮件) =====  
-IMAP_HOST=imap.your-domain.com
+# ===== IMAP 接收邮件配置 =====  
+IMAP_HOST=imap.gmail.com
 IMAP_PORT=993
 IMAP_SECURE=true
-IMAP_USER=your-email@domain.com
+IMAP_USER=your-email@gmail.com
 IMAP_PASS=your-app-password
 
-# ===== 邮件路由 =====
-EMAIL_TO=your-notification-email@gmail.com    # 接收通知的邮箱
-ALLOWED_SENDERS=your-notification-email@gmail.com  # 允许发送命令的邮箱
+# ===== 邮件路由配置 =====
+EMAIL_TO=your-notification-email@gmail.com
+ALLOWED_SENDERS=your-notification-email@gmail.com
+
+# ===== 系统配置 =====
+SESSION_MAP_PATH=/Users/your-username/path/to/Claude-Code-Remote/src/data/session-map.json
+INJECTION_MODE=pty
+CLAUDE_CLI_PATH=claude
+LOG_LEVEL=info
 ```
 
-**🔑 Common Email Providers:**
-- **Gmail**: `smtp.gmail.com:587`, `imap.gmail.com:993` (需要应用密码)
-- **Outlook**: `smtp-mail.outlook.com:587`, `outlook.office365.com:993`
-- **飞书**: `smtp.feishu.cn:465`, `imap.feishu.cn:993`
+#### 2.3 常见邮箱配置
 
-### 4. Install Global Commands (Optional but Recommended)
-```bash
-# Install claude-control global command
-node install-global.js
-
-# Verify installation
-claude-control --help
+**Gmail**:
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+IMAP_HOST=imap.gmail.com
+IMAP_PORT=993
 ```
 
-### 5. Configure Claude Code Hooks (Required for Auto-Notifications)
-Add to `~/.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "Stop": [{
-      "matcher": "*", 
-      "hooks": [{
-        "type": "command",
-        "command": "node /path/to/TaskPing/taskping.js notify --type completed",
-        "timeout": 5
-      }]
-    }],
-    "SubagentStop": [{
-      "matcher": "*",
-      "hooks": [{
-        "type": "command", 
-        "command": "node /path/to/TaskPing/taskping.js notify --type waiting",
-        "timeout": 5
-      }]
-    }]
-  }
-}
+**Outlook/Hotmail**:
+```env
+SMTP_HOST=smtp-mail.outlook.com
+SMTP_PORT=587
+IMAP_HOST=outlook.office365.com
+IMAP_PORT=993
 ```
 
-Replace `/path/to/TaskPing` with your actual project path.
+**📌 重要：Gmail 用户必须使用应用密码**
+1. 访问 [Google 账户设置](https://myaccount.google.com/security)
+2. 启用两步验证
+3. 生成应用密码
+4. 在 `.env` 文件中使用应用密码，而不是账户密码
 
-## ⚡ Quick Start (New Users)
-
-**Just cloned? Try this 5-minute setup:**
+#### 2.4 测试邮件配置
 
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Test basic functionality (desktop notifications)
-node taskping.js --help
-node taskping.js status
+# 测试邮件发送功能
 node taskping.js test
 ```
 
-**Result**: ✅ Desktop notifications work immediately!
+如果收到测试邮件，说明邮件配置成功！
 
-### 🔄 Want Email + Remote Control? Continue:
+### ⚙️ 第三步：配置 Claude Code 钩子（5分钟）
 
-```bash
-# 3. Create email configuration
-cp .env.example .env
-# Edit .env with your email settings (see configuration section below)
-
-# 4. Configure Claude Code hooks
-# Edit ~/.claude/settings.json (see configuration section below)
-
-# 5. Start email monitoring service
-npm run relay:pty
-```
-
-**Result**: ✅ Full remote email control enabled!
-
-## 🚀 How to Run After Clone
-
-### 🎯 Three Main Running Modes
-
-#### 🔔 Mode 1: Desktop Notification Only (Simplest)
-**Use Case**: Just want desktop notifications when Claude completes tasks
+#### 3.1 找到 Claude Code 配置文件
 
 ```bash
-# 1. Basic setup
-npm install
-node taskping.js test
-
-# 2. Configure Claude hooks (see step 5 above)  
-# 3. Use Claude Code normally
-```
-**Result**: ✅ Desktop notifications ❌ Email features
-
-#### 📧 Mode 2: Desktop + Email Notifications  
-**Use Case**: Want both desktop and email notifications, no remote control
-
-```bash
-# 1. Basic setup + email configuration
-npm install
-# Configure .env file
-
-# 2. Test email functionality
-node taskping.js test
-
-# 3. Configure Claude hooks and use normally
-```
-**Result**: ✅ Desktop notifications ✅ Email notifications ❌ Remote control
-
-#### 🚀 Mode 3: Full Remote Control System (Complete Solution)
-**Use Case**: Complete remote control via email replies
-
-```bash
-# 1. Complete setup (all configuration steps above)
-
-# 2. Start email monitoring service
-npm run relay:pty
-
-# 3. Use Claude Code normally
-# 4. Reply to emails to control remotely
-```
-**Result**: ✅ Desktop notifications ✅ Email notifications ✅ Remote email control
-
-### 🎮 Complete Usage Workflow
-
-#### 🔧 Initial Setup (One-time)
-```bash
-# 1. Clone and install
-git clone https://github.com/JessyTsui/TaskPing.git
-cd TaskPing
-npm install
-
-# 2. Configure email (for remote control)
-cp .env.example .env
-nano .env  # Edit with your email settings
-
-# 3. Configure Claude Code hooks
-nano ~/.claude/settings.json
+# Claude Code 配置文件位置
+~/.claude/settings.json
 ```
 
-**Add to `~/.claude/settings.json`:**
+#### 3.2 编辑配置文件
+
+将以下内容添加到 `~/.claude/settings.json`：
+
 ```json
 {
   "hooks": {
@@ -219,7 +132,7 @@ nano ~/.claude/settings.json
       "matcher": "*",
       "hooks": [{
         "type": "command",
-        "command": "node /your/path/to/TaskPing/taskping.js notify --type completed",
+        "command": "node /Users/your-username/path/to/Claude-Code-Remote/taskping.js notify --type completed",
         "timeout": 5
       }]
     }],
@@ -227,7 +140,7 @@ nano ~/.claude/settings.json
       "matcher": "*",
       "hooks": [{
         "type": "command",
-        "command": "node /your/path/to/TaskPing/taskping.js notify --type waiting",
+        "command": "node /Users/your-username/path/to/Claude-Code-Remote/taskping.js notify --type waiting",
         "timeout": 5
       }]
     }]
@@ -235,307 +148,259 @@ nano ~/.claude/settings.json
 }
 ```
 
-#### 🚀 Daily Usage
+**🔥 重要：替换路径**
+- 将 `/Users/your-username/path/to/Claude-Code-Remote` 替换为你的实际项目路径
+- 可以用 `pwd` 命令获取当前目录的完整路径
 
-**Step 1: Start Email Monitoring (Remote Control Mode)**
+### 🎮 第四步：开始使用（马上开始！）
+
+#### 4.1 启动邮件监听服务
+
 ```bash
-# Start email monitoring service (keeps running)
+# 在项目目录启动邮件监听
 npm run relay:pty
 ```
 
-**Step 2: Use Claude Code Normally**
+你会看到类似输出：
+```
+🚀 Starting TaskPing PTY Relay service...
+📧 IMAP server: imap.gmail.com
+👤 Email account: your-email@gmail.com
+🔒 Whitelist senders: your-email@gmail.com
+```
+
+#### 4.2 创建 Claude Code 会话
+
+在新的终端窗口中：
 ```bash
-# In a new terminal, start Claude Code
+# 创建一个新的 Claude Code 会话
 tmux new-session -d -s my-project
 tmux attach -t my-project
+
+# 在 tmux 会话中启动 Claude Code
 claude
-
-# Or simply
-claude
 ```
 
-**Step 3: Work and Control Remotely**
-1. 💬 **Use Claude normally**: Ask questions, give tasks
-2. 📧 **Get notifications**: When Claude completes tasks, receive email
-3. 📨 **Reply to control**: Reply to notification emails with new commands
-4. 🔄 **Auto execution**: Your email replies automatically execute in Claude
+#### 4.3 开始远程控制
 
-#### 📧 Email Control Examples
+1. **与 Claude 对话**：
+   ```
+   > 请帮我分析这个项目的结构
+   ```
 
-**Received notification email:**
-```
-Subject: TaskPing 任务完成通知 [#ABC123]
+2. **接收邮件通知**：
+   Claude 完成任务后，你会收到邮件，内容类似：
+   ```
+   Subject: TaskPing 任务完成通知 [#ABC123]
+   
+   Claude has completed your task:
+   "请帮我分析这个项目的结构"
+   
+   [Claude的完整回复内容...]
+   
+   Reply to this email to send new commands.
+   Token: ABC123
+   ```
 
-Claude has completed your task:
-"Please analyze the project structure"
+3. **回复邮件控制**：
+   直接回复邮件：
+   ```
+   请继续优化代码性能
+   ```
 
-Reply to this email to send new commands.
-Token: ABC123
+4. **命令自动执行**：
+   你的回复会自动注入到 Claude Code 中并执行！
+
+## 🎯 高级使用技巧
+
+### 📝 多行命令支持
+
+你可以在邮件回复中使用复杂的多行命令：
+
+```
+请按以下步骤进行：
+
+1. 分析当前代码结构
+2. 识别性能瓶颈
+3. 提供具体的优化建议
+
+详细要求：
+- 重点关注数据库查询优化
+- 检查内存使用情况
+- 提供代码示例
+
+谢谢！
 ```
 
-**Send commands by replying:**
-```
-Please continue with the performance analysis
-```
+### 🔄 多项目管理
 
-**Or use explicit command format:**
-```
-CMD: help me optimize the database queries
-```
-
-**Or code blocks:**
-```
-please run:
-```
-npm test
-```
-```
-
-#### 🎯 Advanced Usage Patterns
-
-**Pattern 1: Long-running Projects**
 ```bash
-# Start persistent session
-tmux new-session -d -s project-alpha
-tmux attach -t project-alpha
-
-# Start TaskPing monitoring
-npm run relay:pty  # In background terminal
-
-# Work remotely via email all day
-```
-
-**Pattern 2: Multiple Projects**
-```bash
-# Project A
+# 项目 A
 tmux new-session -d -s project-a
-# Project B  
+tmux send-keys -t project-a "cd /path/to/project-a && claude" Enter
+
+# 项目 B  
 tmux new-session -d -s project-b
-
-# Each session gets unique email tokens
-# Control different projects via email
+tmux send-keys -t project-b "cd /path/to/project-b && claude" Enter
 ```
 
-### 🔧 Service Management Commands
+每个会话都会有独立的邮件 Token，你可以同时控制多个项目！
+
+### 📊 监控和管理
 
 ```bash
-# Email Monitoring Service
-npm run relay:pty              # Start email monitoring (foreground)
-# Use Ctrl+C to stop
+# 查看系统状态
+node taskping.js status
 
-# System Status
-node taskping.js status        # View overall system status
-node taskping.js test          # Test all notification channels
+# 查看待处理命令
+node taskping.js commands list
 
-# Command Queue Management  
-node taskping.js commands list    # View pending email commands
-node taskping.js commands status  # Check command processing status
-node taskping.js commands clear   # Clear command queue
+# 查看活跃会话
+tmux list-sessions
 
-# Configuration
-node taskping.js config        # Interactive configuration wizard
+# 清理命令队列
+node taskping.js commands clear
 ```
 
-### 📊 How It Works
+## 🎬 使用场景示例
 
-1. **🔗 Integration**: Claude Code hooks automatically trigger TaskPing
-2. **📧 Notification**: Email sent when Claude completes tasks (includes session token)
-3. **📨 Reply Processing**: Your email replies are parsed for commands  
-4. **🔄 Auto Injection**: Commands automatically injected into the correct Claude session
-5. **🛡️ Security**: Only whitelisted email addresses can send commands
+### 场景1：代码审查自动化
+1. 在办公室启动代码审查任务
+2. 回家路上收到完成邮件："发现3个问题"
+3. 回复邮件："请修复第一个问题"
+4. Claude 自动开始修复
+5. 通过邮件持续跟进进度
 
-## 🔧 Project Architecture
+### 场景2：长时间项目监控
+1. 启动大型重构任务
+2. Claude 分模块完成工作
+3. 每个阶段完成时收到邮件通知
+4. 通过邮件回复指导下一步工作
 
-```
-TaskPing/
-├── src/
-│   ├── channels/email/
-│   │   └── smtp.js           # SMTP email sending
-│   ├── core/
-│   │   ├── config.js         # Configuration management
-│   │   ├── logger.js         # Logging system
-│   │   └── notifier.js       # Notification coordinator
-│   ├── data/
-│   │   ├── session-map.json  # Session mapping table
-│   │   └── processed-messages.json  # Processed email records
-│   ├── relay/
-│   │   └── relay-pty.js      # Email monitoring and PTY injection service
-│   └── utils/
-│       └── tmux-monitor.js   # Tmux session monitoring
-├── taskping.js               # Main entry file
-├── claude-control.js         # Claude Code session management
-├── start-relay-pty.js        # Email monitoring service starter
-└── install-global.js         # Global installation script
-```
+### 场景3：多地协作开发
+1. 在不同地点都能通过邮件控制同一个 Claude Code 实例
+2. 无需 VPN 或复杂的远程桌面设置
+3. 只需要邮箱就能远程编程
 
-## 🛠️ Core Technical Implementation
+## 🔧 系统管理命令
 
-### Email Monitoring and Processing
-- Uses `node-imap` to monitor IMAP mailbox for new emails
-- Implements email deduplication mechanism (based on UID, messageId, and content hash)
-- Asynchronous event handling to avoid race conditions
-
-### Session Management
-- Tmux session auto-detection and command injection
-- Session state persistent storage
-- Support for concurrent multi-session processing
-
-### Notification System
-- Automatically captures current tmux session's user questions and Claude responses
-- Generates email notifications containing complete conversation content
-- Supports multiple notification channels (desktop notifications, email, etc.)
-
-## 🔍 Troubleshooting
-
-### ❓ Common Issues & Solutions
-
-#### 🔧 Setup Problems
-
-**"npm install" fails:**
 ```bash
-# Check Node.js version (requires 14+)
-node -v
+# 邮件监听服务
+npm run relay:pty              # 启动邮件监听（前台运行）
 
-# Fix package.json issues
-npm install
+# 系统状态检查
+node taskping.js status        # 查看整体状态
+node taskping.js test          # 测试所有功能
 
-# If still failing, try
+# 命令队列管理  
+node taskping.js commands list    # 查看待处理命令
+node taskping.js commands status  # 查看处理状态
+node taskping.js commands clear   # 清空命令队列
+
+# 会话管理
+tmux list-sessions             # 查看所有会话
+tmux attach -t session-name    # 连接到会话
+tmux kill-session -t session-name  # 删除会话
+```
+
+## 🔍 故障排除
+
+### ❓ 常见问题
+
+**Q: npm install 失败**
+```bash
+# 检查 Node.js 版本
+node -v  # 需要 14+
+
+# 清理并重新安装
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-**"Module not found" errors:**
+**Q: 邮件发送失败**
 ```bash
-# Make sure you're in the right directory
-pwd
-ls package.json taskping.js  # Should exist
-
-# Reinstall dependencies
-npm install
-```
-
-#### 📧 Email Issues
-
-**Test email configuration:**
-```bash
-# Check configuration status
+# 检查邮件配置
 node taskping.js status
-
-# Test email sending  
 node taskping.js test
 
-# Check .env file
-cat .env
+# 常见问题：
+# 1. Gmail 用户必须使用应用密码
+# 2. 检查 SMTP/IMAP 端口和安全设置
+# 3. 确认网络可以访问邮件服务器
 ```
 
-**Email not working:**
+**Q: 命令注入失败**
 ```bash
-# Common fixes:
-# 1. Check SMTP/IMAP settings in .env
-# 2. Verify email passwords (use app passwords for Gmail)
-# 3. Check firewall/network connectivity
-# 4. Ensure ports are correct (465/587 for SMTP, 993 for IMAP)
-```
-
-#### 🔄 Remote Control Issues
-
-**Email monitoring not starting:**
-```bash
-# Start monitoring service
-npm run relay:pty
-
-# If fails, check:
-cat .env  # Verify email configuration
-ps aux | grep relay  # Check for conflicts
-```
-
-**Commands not executing:**
-```bash
-# Check Claude session exists
+# 检查 tmux 会话
 tmux list-sessions
 
-# Verify command queue
-node taskping.js commands list
+# 检查会话内容
+tmux capture-pane -t session-name -p
 
-# Check allowed senders in .env
+# 检查允许的发件人
 grep ALLOWED_SENDERS .env
 ```
 
-**Claude hooks not triggering:**
+**Q: Claude hooks 不触发**
 ```bash
-# Verify hooks configuration
+# 验证 hooks 配置
 cat ~/.claude/settings.json
 
-# Test hook manually
+# 手动测试 hook
 node taskping.js notify --type completed
 
-# Check file paths in hooks configuration
+# 检查文件路径是否正确
 ```
 
-#### 🐛 System Issues
-
-**Multiple processes running:**
+**Q: 收不到邮件通知**
 ```bash
-# Check running processes
-ps aux | grep -E "(relay-pty|taskping)"
-
-# Stop all TaskPing processes
-pkill -f relay-pty
-pkill -f taskping
-
-# Restart clean
-npm run relay:pty
-```
-
-**Desktop notifications not working (macOS):**
-```bash
-# Test notifications
+# 检查 SMTP 配置
 node taskping.js test
 
-# Check macOS notification permissions:
-# System Preferences > Notifications & Focus > Terminal
+# 检查垃圾邮件文件夹
+# 确认邮件地址配置正确
 ```
 
-**Session management issues:**
+### 🐛 调试模式
+
 ```bash
-# Clean session data
-rm src/data/session-map.json
+# 启用详细日志
+LOG_LEVEL=debug npm run relay:pty
 
-# Restart email monitoring
-npm run relay:pty
+# 查看会话映射
+cat src/data/session-map.json
 
-# Check session creation logs
+# 查看处理过的邮件
+cat src/data/processed-messages.json
 ```
 
-## 🎯 Use Cases
+## 🛡️ 安全说明
 
-### Remote Programming Workflow
-1. Start a Claude Code code review task at the office
-2. Go home, receive email "Code review completed, found 3 issues"
-3. Reply to email "Please fix the first issue"
-4. Claude automatically starts fixing, sends email notification when complete
-5. Continue replying to emails for next steps
+- ✅ **白名单机制** - 只有 `ALLOWED_SENDERS` 中的邮箱可以发送命令
+- ✅ **会话隔离** - 每个 Token 只能控制对应的会话
+- ✅ **命令验证** - 自动过滤危险命令
+- ✅ **超时机制** - 会话有过期时间，自动清理
 
-### Long-running Task Monitoring
-1. Start large project refactoring task
-2. Claude completes modules step by step
-3. Each stage completion sends email notification of progress
-4. Guide next steps through email replies
+## 🤝 贡献和支持
 
-## 🤝 Contributing
+### 报告问题
+如果遇到问题，请在 [GitHub Issues](https://github.com/JessyTsui/Claude-Code-Remote/issues) 中报告。
 
-1. Fork this project
-2. Create feature branch: `git checkout -b feature/new-feature`
-3. Commit changes: `git commit -am 'Add new feature'`
-4. Push branch: `git push origin feature/new-feature`
-5. Submit Pull Request
+### 功能请求
+欢迎提交新功能建议和改进意见。
 
-## 📄 License
+### 贡献代码
+1. Fork 项目
+2. 创建功能分支
+3. 提交更改
+4. 发起 Pull Request
 
-This project is licensed under the MIT License.
+## 📄 许可证
+
+本项目采用 MIT 许可证。
 
 ---
 
-**Make Claude Code workflows smarter and more efficient!**
+**🚀 让 Claude Code 无处不在，随时随地智能编程！**
 
-If this project helps you, please give us a ⭐!
+如果这个项目对你有帮助，请给我们一个 ⭐ Star！
