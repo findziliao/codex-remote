@@ -108,7 +108,10 @@ class TaskPingCLI {
             process.exit(1);
         }
 
-        const result = await this.notifier.notify(type);
+        // 自动捕获当前tmux会话的对话内容
+        const metadata = await this.captureCurrentConversation();
+        
+        const result = await this.notifier.notify(type, metadata);
         
         if (result.success) {
             this.logger.info(`${type} notification sent successfully`);
@@ -116,6 +119,42 @@ class TaskPingCLI {
         } else {
             this.logger.error(`Failed to send ${type} notification`);
             process.exit(1);
+        }
+    }
+
+    async captureCurrentConversation() {
+        try {
+            const { execSync } = require('child_process');
+            const TmuxMonitor = require('./src/utils/tmux-monitor');
+            
+            // 获取当前tmux会话名称
+            let currentSession = null;
+            try {
+                currentSession = execSync('tmux display-message -p "#S"', { 
+                    encoding: 'utf8',
+                    stdio: ['ignore', 'pipe', 'ignore']
+                }).trim();
+            } catch (e) {
+                // 不在tmux中运行，返回空metadata
+                return {};
+            }
+            
+            if (!currentSession) {
+                return {};
+            }
+            
+            // 使用TmuxMonitor捕获对话
+            const tmuxMonitor = new TmuxMonitor();
+            const conversation = tmuxMonitor.getRecentConversation(currentSession);
+            
+            return {
+                userQuestion: conversation.userQuestion,
+                claudeResponse: conversation.claudeResponse,
+                tmuxSession: currentSession
+            };
+        } catch (error) {
+            this.logger.debug('Failed to capture conversation:', error.message);
+            return {};
         }
     }
 

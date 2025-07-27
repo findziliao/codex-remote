@@ -8,6 +8,8 @@ const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
+const TmuxMonitor = require('../../utils/tmux-monitor');
+const { execSync } = require('child_process');
 
 class EmailChannel extends NotificationChannel {
     constructor(config = {}) {
@@ -15,6 +17,7 @@ class EmailChannel extends NotificationChannel {
         this.transporter = null;
         this.sessionsDir = path.join(__dirname, '../../data/sessions');
         this.templatesDir = path.join(__dirname, '../../assets/email-templates');
+        this.tmuxMonitor = new TmuxMonitor();
         
         this._ensureDirectories();
         this._initializeTransporter();
@@ -27,6 +30,16 @@ class EmailChannel extends NotificationChannel {
         if (!fs.existsSync(this.templatesDir)) {
             fs.mkdirSync(this.templatesDir, { recursive: true });
         }
+    }
+
+    _generateToken() {
+        // 生成简短的Token (大写字母+数字，8位)
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let token = '';
+        for (let i = 0; i < 8; i++) {
+            token += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return token;
     }
 
     _initializeTransporter() {
@@ -56,6 +69,21 @@ class EmailChannel extends NotificationChannel {
         }
     }
 
+    _getCurrentTmuxSession() {
+        try {
+            // Try to get current tmux session
+            const tmuxSession = execSync('tmux display-message -p "#S"', { 
+                encoding: 'utf8',
+                stdio: ['ignore', 'pipe', 'ignore']
+            }).trim();
+            
+            return tmuxSession || null;
+        } catch (error) {
+            // Not in a tmux session or tmux not available
+            return null;
+        }
+    }
+
     async _sendImpl(notification) {
         if (!this.transporter) {
             throw new Error('Email transporter not initialized');
@@ -65,14 +93,26 @@ class EmailChannel extends NotificationChannel {
             throw new Error('Email recipient not configured');
         }
 
-        // 生成会话ID
+        // 生成会话ID和Token
         const sessionId = uuidv4();
+        const token = this._generateToken();
+        
+        // 获取当前tmux会话和对话内容
+        const tmuxSession = this._getCurrentTmuxSession();
+        if (tmuxSession && !notification.metadata) {
+            const conversation = this.tmuxMonitor.getRecentConversation(tmuxSession);
+            notification.metadata = {
+                userQuestion: conversation.userQuestion || notification.message,
+                claudeResponse: conversation.claudeResponse || notification.message,
+                tmuxSession: tmuxSession
+            };
+        }
         
         // 创建会话记录
-        await this._createSession(sessionId, notification);
+        await this._createSession(sessionId, notification, token);
 
         // 生成邮件内容
-        const emailContent = this._generateEmailContent(notification, sessionId);
+        const emailContent = this._generateEmailContent(notification, sessionId, token);
         
         const mailOptions = {
             from: this.config.from || this.config.smtp.auth.user,
@@ -99,11 +139,16 @@ class EmailChannel extends NotificationChannel {
         }
     }
 
-    async _createSession(sessionId, notification) {
+    async _createSession(sessionId, notification, token) {
         const session = {
             id: sessionId,
+            token: token,
+            type: 'pty',
             created: new Date().toISOString(),
             expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24小时后过期
+            createdAt: Math.floor(Date.now() / 1000),
+            expiresAt: Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000),
+            cwd: process.cwd(),
             notification: {
                 type: notification.type,
                 project: notification.project,
@@ -117,7 +162,39 @@ class EmailChannel extends NotificationChannel {
         const sessionFile = path.join(this.sessionsDir, `${sessionId}.json`);
         fs.writeFileSync(sessionFile, JSON.stringify(session, null, 2));
         
-        this.logger.debug(`Session created: ${sessionId}`);
+        // 同时保存到PTY映射格式
+        const sessionMapPath = process.env.SESSION_MAP_PATH || path.join(__dirname, '../../data/session-map.json');
+        let sessionMap = {};
+        if (fs.existsSync(sessionMapPath)) {
+            try {
+                sessionMap = JSON.parse(fs.readFileSync(sessionMapPath, 'utf8'));
+            } catch (e) {
+                sessionMap = {};
+            }
+        }
+        
+        // 使用传入的tmux会话名称或检测当前会话
+        let tmuxSession = notification.metadata?.tmuxSession || this._getCurrentTmuxSession() || 'claude-taskping';
+        
+        sessionMap[token] = {
+            type: 'pty',
+            createdAt: Math.floor(Date.now() / 1000),
+            expiresAt: Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000),
+            cwd: process.cwd(),
+            sessionId: sessionId,
+            tmuxSession: tmuxSession,
+            description: `${notification.type} - ${notification.project}`
+        };
+        
+        // 确保目录存在
+        const mapDir = path.dirname(sessionMapPath);
+        if (!fs.existsSync(mapDir)) {
+            fs.mkdirSync(mapDir, { recursive: true });
+        }
+        
+        fs.writeFileSync(sessionMapPath, JSON.stringify(sessionMap, null, 2));
+        
+        this.logger.debug(`Session created: ${sessionId}, Token: ${token}`);
     }
 
     async _removeSession(sessionId) {
@@ -128,20 +205,50 @@ class EmailChannel extends NotificationChannel {
         }
     }
 
-    _generateEmailContent(notification, sessionId) {
+    _generateEmailContent(notification, sessionId, token) {
         const template = this._getTemplate(notification.type);
         const timestamp = new Date().toLocaleString('zh-CN');
         
+        // 获取项目目录名（最后一级目录）
+        const projectDir = path.basename(process.cwd());
+        
+        // 提取用户问题（从notification.metadata中获取，如果有的话）
+        let userQuestion = '';
+        let claudeResponse = '';
+        
+        if (notification.metadata) {
+            userQuestion = notification.metadata.userQuestion || '';
+            claudeResponse = notification.metadata.claudeResponse || '';
+        }
+        
+        // 限制用户问题长度用于标题
+        const maxQuestionLength = 30;
+        const shortQuestion = userQuestion.length > maxQuestionLength ? 
+            userQuestion.substring(0, maxQuestionLength) + '...' : userQuestion;
+        
+        // 生成更具辨识度的标题
+        let enhancedSubject = template.subject;
+        if (shortQuestion) {
+            enhancedSubject = enhancedSubject.replace('{{project}}', `${projectDir} | ${shortQuestion}`);
+        } else {
+            enhancedSubject = enhancedSubject.replace('{{project}}', projectDir);
+        }
+        
         // 模板变量替换
         const variables = {
-            project: notification.project,
+            project: projectDir,
             message: notification.message,
             timestamp: timestamp,
             sessionId: sessionId,
-            type: notification.type === 'completed' ? '任务完成' : '等待输入'
+            token: token,
+            type: notification.type === 'completed' ? '任务完成' : '等待输入',
+            userQuestion: userQuestion || '未指定任务',
+            claudeResponse: claudeResponse || notification.message,
+            projectDir: projectDir,
+            shortQuestion: shortQuestion || '无具体问题'
         };
 
-        let subject = template.subject;
+        let subject = enhancedSubject;
         let html = template.html;
         let text = template.text;
 
@@ -160,7 +267,7 @@ class EmailChannel extends NotificationChannel {
         // 默认模板
         const templates = {
             completed: {
-                subject: '[TaskPing] Claude Code 任务完成 - {{project}}',
+                subject: '[TaskPing #{{token}}] Claude Code 任务完成 - {{project}}',
                 html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
                     <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -170,14 +277,20 @@ class EmailChannel extends NotificationChannel {
                         
                         <div style="background-color: #ecf0f1; padding: 15px; border-radius: 6px; margin: 20px 0;">
                             <p style="margin: 0; color: #2c3e50;">
-                                <strong>项目:</strong> {{project}}<br>
+                                <strong>项目:</strong> {{projectDir}}<br>
                                 <strong>时间:</strong> {{timestamp}}<br>
                                 <strong>状态:</strong> {{type}}
                             </p>
                         </div>
 
+                        <div style="background-color: #fff3e0; padding: 15px; border-radius: 6px; border-left: 4px solid #ff9800; margin: 20px 0;">
+                            <h4 style="margin-top: 0; color: #e65100;">📝 您的问题</h4>
+                            <p style="margin: 0; color: #2c3e50; font-style: italic;">{{userQuestion}}</p>
+                        </div>
+
                         <div style="background-color: #e8f5e8; padding: 15px; border-radius: 6px; border-left: 4px solid #27ae60;">
-                            <p style="margin: 0; color: #2c3e50;">{{message}}</p>
+                            <h4 style="margin-top: 0; color: #27ae60;">🤖 Claude 的回复</h4>
+                            <p style="margin: 0; color: #2c3e50;">{{claudeResponse}}</p>
                         </div>
 
                         <div style="margin: 25px 0; padding: 20px; background-color: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
@@ -202,13 +315,17 @@ class EmailChannel extends NotificationChannel {
                 </div>
                 `,
                 text: `
-[TaskPing] Claude Code 任务完成 - {{project}}
+[TaskPing #{{token}}] Claude Code 任务完成 - {{projectDir}} | {{shortQuestion}}
 
-项目: {{project}}
+项目: {{projectDir}}
 时间: {{timestamp}}
 状态: {{type}}
 
-消息: {{message}}
+📝 您的问题:
+{{userQuestion}}
+
+🤖 Claude 的回复:
+{{claudeResponse}}
 
 如何继续对话:
 要继续与 Claude Code 对话，请直接回复此邮件，在邮件正文中输入您的指令。
@@ -223,7 +340,7 @@ class EmailChannel extends NotificationChannel {
                 `
             },
             waiting: {
-                subject: '[TaskPing] Claude Code 等待输入 - {{project}}',
+                subject: '[TaskPing #{{token}}] Claude Code 等待输入 - {{project}}',
                 html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
                     <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -233,13 +350,14 @@ class EmailChannel extends NotificationChannel {
                         
                         <div style="background-color: #ecf0f1; padding: 15px; border-radius: 6px; margin: 20px 0;">
                             <p style="margin: 0; color: #2c3e50;">
-                                <strong>项目:</strong> {{project}}<br>
+                                <strong>项目:</strong> {{projectDir}}<br>
                                 <strong>时间:</strong> {{timestamp}}<br>
                                 <strong>状态:</strong> {{type}}
                             </p>
                         </div>
 
                         <div style="background-color: #fdf2e9; padding: 15px; border-radius: 6px; border-left: 4px solid #e67e22;">
+                            <h4 style="margin-top: 0; color: #e67e22;">⏳ 等待处理</h4>
                             <p style="margin: 0; color: #2c3e50;">{{message}}</p>
                         </div>
 
@@ -259,13 +377,13 @@ class EmailChannel extends NotificationChannel {
                 </div>
                 `,
                 text: `
-[TaskPing] Claude Code 等待输入 - {{project}}
+[TaskPing #{{token}}] Claude Code 等待输入 - {{projectDir}}
 
-项目: {{project}}
+项目: {{projectDir}}
 时间: {{timestamp}}
 状态: {{type}}
 
-消息: {{message}}
+⏳ 等待处理: {{message}}
 
 Claude 需要您的进一步指导。请回复此邮件告诉 Claude 下一步应该做什么。
 

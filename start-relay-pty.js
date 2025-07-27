@@ -74,8 +74,45 @@ function createExampleSession() {
     }
 }
 
+// PID文件路径
+const PID_FILE = path.join(__dirname, 'relay-pty.pid');
+
+// 检查是否已有实例在运行
+function checkSingleInstance() {
+    if (fs.existsSync(PID_FILE)) {
+        try {
+            const oldPid = parseInt(fs.readFileSync(PID_FILE, 'utf8'));
+            // 检查进程是否真的在运行
+            process.kill(oldPid, 0);
+            // 如果没有抛出错误，说明进程还在运行
+            console.error('❌ 错误: relay-pty 服务已经在运行中 (PID: ' + oldPid + ')');
+            console.log('\n如果您确定服务没有运行，可以删除 PID 文件:');
+            console.log('  rm ' + PID_FILE);
+            console.log('\n或停止现有服务:');
+            console.log('  kill ' + oldPid);
+            process.exit(1);
+        } catch (err) {
+            // 进程不存在，删除旧的 PID 文件
+            fs.unlinkSync(PID_FILE);
+        }
+    }
+    
+    // 写入当前进程的 PID
+    fs.writeFileSync(PID_FILE, process.pid.toString());
+}
+
+// 清理 PID 文件
+function cleanupPidFile() {
+    if (fs.existsSync(PID_FILE)) {
+        fs.unlinkSync(PID_FILE);
+    }
+}
+
 // 启动服务
 function startService() {
+    // 检查单实例
+    checkSingleInstance();
+    
     console.log('🚀 正在启动 TaskPing PTY Relay 服务...\n');
     
     const relayPath = path.join(__dirname, 'src/relay/relay-pty.js');
@@ -93,15 +130,21 @@ function startService() {
     process.on('SIGINT', () => {
         console.log('\n⏹️  正在停止服务...');
         relay.kill('SIGINT');
+        cleanupPidFile();
         process.exit(0);
     });
     
+    process.on('exit', cleanupPidFile);
+    process.on('SIGTERM', cleanupPidFile);
+    
     relay.on('error', (error) => {
         console.error('❌ 启动失败:', error.message);
+        cleanupPidFile();
         process.exit(1);
     });
     
     relay.on('exit', (code, signal) => {
+        cleanupPidFile();
         if (signal) {
             console.log(`\n服务已停止 (信号: ${signal})`);
         } else if (code !== 0) {
