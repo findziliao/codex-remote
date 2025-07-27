@@ -2,6 +2,8 @@
 
 Control [Claude Code](https://claude.ai/code) remotely via email. Start tasks locally, receive notifications when Claude completes them, and send new commands by simply replying to emails.
 
+[![Claude Code Remote Demo](./CCRemote_demo.png)](https://youtu.be/_yrNlDYOJhw)
+
 > 🐦 Follow [@Jiaxi_Cui](https://x.com/Jiaxi_Cui) for updates and AI development insights
 
 ## ✨ Features
