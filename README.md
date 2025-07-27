@@ -33,9 +33,9 @@ cd Claude-Code-Remote
 npm install
 
 # 3. 测试基本功能
-node taskping.js --help
-node taskping.js status
-node taskping.js test
+node claude-remote.js --help
+node claude-remote.js status
+node claude-remote.js test
 ```
 
 如果看到桌面通知弹出，说明基础功能正常！
@@ -45,38 +45,36 @@ node taskping.js test
 #### 2.1 创建邮件配置文件
 
 ```bash
-# 在项目根目录创建 .env 文件
-touch .env
+# 复制示例配置文件
+cp .env.example .env
 ```
 
 #### 2.2 编辑 .env 文件
 
-将以下内容复制到 `.env` 文件中，并替换为你的邮箱信息：
+编辑 `.env` 文件，替换为你的邮箱信息：
+
+```bash
+# 编辑配置文件
+nano .env
+# 或者使用其他编辑器
+open .env
+```
+
+主要需要修改的配置项：
 
 ```env
-# ===== SMTP 发送邮件配置 =====
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
+# 你的邮箱地址和应用密码
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
-
-# ===== IMAP 接收邮件配置 =====  
-IMAP_HOST=imap.gmail.com
-IMAP_PORT=993
-IMAP_SECURE=true
-IMAP_USER=your-email@gmail.com
+IMAP_USER=your-email@gmail.com  
 IMAP_PASS=your-app-password
 
-# ===== 邮件路由配置 =====
+# 接收通知的邮箱（可以是同一个）
 EMAIL_TO=your-notification-email@gmail.com
 ALLOWED_SENDERS=your-notification-email@gmail.com
 
-# ===== 系统配置 =====
+# 你的实际项目路径
 SESSION_MAP_PATH=/Users/your-username/path/to/Claude-Code-Remote/src/data/session-map.json
-INJECTION_MODE=pty
-CLAUDE_CLI_PATH=claude
-LOG_LEVEL=info
 ```
 
 #### 2.3 常见邮箱配置
@@ -107,7 +105,7 @@ IMAP_PORT=993
 
 ```bash
 # 测试邮件发送功能
-node taskping.js test
+node claude-remote.js test
 ```
 
 如果收到测试邮件，说明邮件配置成功！
@@ -132,7 +130,7 @@ node taskping.js test
       "matcher": "*",
       "hooks": [{
         "type": "command",
-        "command": "node /Users/your-username/path/to/Claude-Code-Remote/taskping.js notify --type completed",
+        "command": "node /Users/your-username/path/to/Claude-Code-Remote/claude-remote.js notify --type completed",
         "timeout": 5
       }]
     }],
@@ -140,7 +138,7 @@ node taskping.js test
       "matcher": "*",
       "hooks": [{
         "type": "command",
-        "command": "node /Users/your-username/path/to/Claude-Code-Remote/taskping.js notify --type waiting",
+        "command": "node /Users/your-username/path/to/Claude-Code-Remote/claude-remote.js notify --type waiting",
         "timeout": 5
       }]
     }]
@@ -151,6 +149,7 @@ node taskping.js test
 **🔥 重要：替换路径**
 - 将 `/Users/your-username/path/to/Claude-Code-Remote` 替换为你的实际项目路径
 - 可以用 `pwd` 命令获取当前目录的完整路径
+- 确保文件名为 `claude-remote.js`
 
 ### 🎮 第四步：开始使用（马上开始！）
 
@@ -163,7 +162,7 @@ npm run relay:pty
 
 你会看到类似输出：
 ```
-🚀 Starting TaskPing PTY Relay service...
+🚀 Starting Claude Code Remote PTY Relay service...
 📧 IMAP server: imap.gmail.com
 👤 Email account: your-email@gmail.com
 🔒 Whitelist senders: your-email@gmail.com
@@ -191,7 +190,7 @@ claude
 2. **接收邮件通知**：
    Claude 完成任务后，你会收到邮件，内容类似：
    ```
-   Subject: TaskPing 任务完成通知 [#ABC123]
+   Subject: Claude Code Remote 任务完成通知 [#ABC123]
    
    Claude has completed your task:
    "请帮我分析这个项目的结构"
@@ -250,16 +249,16 @@ tmux send-keys -t project-b "cd /path/to/project-b && claude" Enter
 
 ```bash
 # 查看系统状态
-node taskping.js status
+node claude-remote.js status
 
 # 查看待处理命令
-node taskping.js commands list
+node claude-remote.js commands list
 
 # 查看活跃会话
 tmux list-sessions
 
 # 清理命令队列
-node taskping.js commands clear
+node claude-remote.js commands clear
 ```
 
 ## 🎬 使用场景示例
@@ -289,13 +288,13 @@ node taskping.js commands clear
 npm run relay:pty              # 启动邮件监听（前台运行）
 
 # 系统状态检查
-node taskping.js status        # 查看整体状态
-node taskping.js test          # 测试所有功能
+node claude-remote.js status        # 查看整体状态
+node claude-remote.js test          # 测试所有功能
 
 # 命令队列管理  
-node taskping.js commands list    # 查看待处理命令
-node taskping.js commands status  # 查看处理状态
-node taskping.js commands clear   # 清空命令队列
+node claude-remote.js commands list    # 查看待处理命令
+node claude-remote.js commands status  # 查看处理状态
+node claude-remote.js commands clear   # 清空命令队列
 
 # 会话管理
 tmux list-sessions             # 查看所有会话
@@ -320,8 +319,8 @@ npm install
 **Q: 邮件发送失败**
 ```bash
 # 检查邮件配置
-node taskping.js status
-node taskping.js test
+node claude-remote.js status
+node claude-remote.js test
 
 # 常见问题：
 # 1. Gmail 用户必须使用应用密码
@@ -347,7 +346,7 @@ grep ALLOWED_SENDERS .env
 cat ~/.claude/settings.json
 
 # 手动测试 hook
-node taskping.js notify --type completed
+node claude-remote.js notify --type completed
 
 # 检查文件路径是否正确
 ```
@@ -355,7 +354,7 @@ node taskping.js notify --type completed
 **Q: 收不到邮件通知**
 ```bash
 # 检查 SMTP 配置
-node taskping.js test
+node claude-remote.js test
 
 # 检查垃圾邮件文件夹
 # 确认邮件地址配置正确
