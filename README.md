@@ -6,9 +6,11 @@ Control [Claude Code](https://claude.ai/code) remotely via email. Start tasks lo
   
   ### 🎥 Watch Demo Video
   
-  [![Claude Code Remote Demo](./CCRemote_demo.png)](https://youtu.be/_yrNlDYOJhw)
-  
-  **▶️ Click to watch on YouTube**
+  <a href="https://youtu.be/_yrNlDYOJhw">
+    <img src="./CCRemote_demo.png" alt="Claude Code Remote Demo" width="100%">
+    <br>
+    <img src="https://img.shields.io/badge/▶-Watch%20on%20YouTube-red?style=for-the-badge&logo=youtube" alt="Watch on YouTube">
+  </a>
   
 </div>
 
