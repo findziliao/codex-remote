@@ -122,8 +122,8 @@ class EmailChannel extends NotificationChannel {
             text: emailContent.text,
             // Add custom headers for reply recognition
             headers: {
-                'X-TaskPing-Session-ID': sessionId,
-                'X-TaskPing-Type': notification.type
+                'X-Claude-Code-Remote-Session-ID': sessionId,
+                'X-Claude-Code-Remote-Type': notification.type
             }
         };
 
@@ -174,7 +174,7 @@ class EmailChannel extends NotificationChannel {
         }
         
         // Use passed tmux session name or detect current session
-        let tmuxSession = notification.metadata?.tmuxSession || this._getCurrentTmuxSession() || 'claude-taskping';
+        let tmuxSession = notification.metadata?.tmuxSession || this._getCurrentTmuxSession() || 'claude-code-remote';
         
         sessionMap[token] = {
             type: 'pty',
@@ -267,7 +267,7 @@ class EmailChannel extends NotificationChannel {
         // Default templates
         const templates = {
             completed: {
-                subject: '[TaskPing #{{token}}] Claude Code Task Completed - {{project}}',
+                subject: '[Claude-Code-Remote #{{token}}] Claude Code Task Completed - {{project}}',
                 html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
                     <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -309,13 +309,13 @@ class EmailChannel extends NotificationChannel {
                         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; font-size: 12px; color: #6c757d;">
                             <p style="margin: 5px 0;">Session ID: <code>{{sessionId}}</code></p>
                             <p style="margin: 5px 0;">🔒 Security note: Please do not forward this email, session will automatically expire after 24 hours</p>
-                            <p style="margin: 5px 0;">📧 This is an automated email from TaskPing</p>
+                            <p style="margin: 5px 0;">📧 This is an automated email from Claude-Code-Remote</p>
                         </div>
                     </div>
                 </div>
                 `,
                 text: `
-[TaskPing #{{token}}] Claude Code Task Completed - {{projectDir}} | {{shortQuestion}}
+[Claude-Code-Remote #{{token}}] Claude Code Task Completed - {{projectDir}} | {{shortQuestion}}
 
 Project: {{projectDir}}
 Time: {{timestamp}}
@@ -340,7 +340,7 @@ Security Note: Please do not forward this email, session will automatically expi
                 `
             },
             waiting: {
-                subject: '[TaskPing #{{token}}] Claude Code Waiting for Input - {{project}}',
+                subject: '[Claude-Code-Remote #{{token}}] Claude Code Waiting for Input - {{project}}',
                 html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
                     <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -371,13 +371,13 @@ Security Note: Please do not forward this email, session will automatically expi
                         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; font-size: 12px; color: #6c757d;">
                             <p style="margin: 5px 0;">Session ID: <code>{{sessionId}}</code></p>
                             <p style="margin: 5px 0;">🔒 Security note: Please do not forward this email, session will automatically expire after 24 hours</p>
-                            <p style="margin: 5px 0;">📧 This is an automated email from TaskPing</p>
+                            <p style="margin: 5px 0;">📧 This is an automated email from Claude-Code-Remote</p>
                         </div>
                     </div>
                 </div>
                 `,
                 text: `
-[TaskPing #{{token}}] Claude Code Waiting for Input - {{projectDir}}
+[Claude-Code-Remote #{{token}}] Claude Code Waiting for Input - {{projectDir}}
 
 Project: {{projectDir}}
 Time: {{timestamp}}
@@ -428,9 +428,9 @@ Security Note: Please do not forward this email, session will automatically expi
             // Send test email
             const testNotification = {
                 type: 'completed',
-                title: 'TaskPing Test',
+                title: 'Claude-Code-Remote Test',
                 message: 'This is a test email to verify that the email notification function is working properly.',
-                project: 'TaskPing-Test',
+                project: 'Claude-Code-Remote-Test',
                 metadata: {
                     test: true,
                     timestamp: new Date().toISOString()

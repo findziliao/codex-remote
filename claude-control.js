@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * TaskPing Unattended Remote Control Setup Assistant
+ * Claude-Code-Remote Unattended Remote Control Setup Assistant
  */
 
 const { exec, spawn } = require('child_process');
@@ -10,22 +10,22 @@ const path = require('path');
 
 class RemoteControlSetup {
     constructor(sessionName = null) {
-        this.sessionName = sessionName || 'claude-taskping';
-        this.taskpingHome = this.findTaskPingHome();
+        this.sessionName = sessionName || 'claude-code-remote';
+        this.claudeCodeRemoteHome = this.findClaudeCodeRemoteHome();
     }
     
-    findTaskPingHome() {
-        // If TASKPING_HOME environment variable is set, use it
-        if (process.env.TASKPING_HOME) {
-            return process.env.TASKPING_HOME;
+    findClaudeCodeRemoteHome() {
+        // If CLAUDE_CODE_REMOTE_HOME environment variable is set, use it
+        if (process.env.CLAUDE_CODE_REMOTE_HOME) {
+            return process.env.CLAUDE_CODE_REMOTE_HOME;
         }
         
-        // If running from the TaskPing directory, use current directory
+        // If running from the Claude-Code-Remote directory, use current directory
         if (fs.existsSync(path.join(__dirname, 'package.json'))) {
             const packagePath = path.join(__dirname, 'package.json');
             try {
                 const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-                if (packageJson.name && packageJson.name.includes('taskping')) {
+                if (packageJson.name && packageJson.name.toLowerCase().includes('claude-code-remote')) {
                     return __dirname;
                 }
             } catch (e) {
@@ -33,11 +33,11 @@ class RemoteControlSetup {
             }
         }
         
-        // Search for TaskPing in common locations
+        // Search for Claude-Code-Remote in common locations
         const commonPaths = [
-            path.join(process.env.HOME, 'dev', 'TaskPing'),
-            path.join(process.env.HOME, 'Projects', 'TaskPing'),
-            path.join(process.env.HOME, 'taskping'),
+            path.join(process.env.HOME, 'dev', 'Claude-Code-Remote'),
+            path.join(process.env.HOME, 'Projects', 'Claude-Code-Remote'),
+            path.join(process.env.HOME, 'claude-code-remote'),
             __dirname // fallback to current script directory
         ];
         
@@ -45,7 +45,7 @@ class RemoteControlSetup {
             if (fs.existsSync(searchPath) && fs.existsSync(path.join(searchPath, 'package.json'))) {
                 try {
                     const packageJson = JSON.parse(fs.readFileSync(path.join(searchPath, 'package.json'), 'utf8'));
-                    if (packageJson.name && packageJson.name.toLowerCase().includes('taskping')) {
+                    if (packageJson.name && packageJson.name.toLowerCase().includes('claude-code-remote')) {
                         return searchPath;
                     }
                 } catch (e) {
@@ -59,7 +59,7 @@ class RemoteControlSetup {
     }
     
     async setup() {
-        console.log('🚀 TaskPing Unattended Remote Control Setup\n');
+        console.log('🚀 Claude-Code-Remote Unattended Remote Control Setup\n');
         console.log('🎯 Goal: Remote access via mobile phone → Home computer Claude Code automatically executes commands\n');
         
         try {
@@ -162,8 +162,8 @@ class RemoteControlSetup {
     }
     
     createNewSession(resolve) {
-        // Use TaskPing home directory as working directory
-        const workingDir = this.taskpingHome;
+        // Use Claude-Code-Remote home directory as working directory
+        const workingDir = this.claudeCodeRemoteHome;
         const command = `tmux new-session -d -s ${this.sessionName} -c "${workingDir}" clauderun`;
         
         console.log(`🚀 Creating Claude tmux session: ${this.sessionName}`);
@@ -215,7 +215,7 @@ class RemoteControlSetup {
         console.log('📋 Usage workflow:');
         console.log('1. 🏠 Start email monitoring at home: npm run relay:pty');
         console.log('2. 🚪 When going out, Claude continues running in tmux');
-        console.log('3. 📱 Receive TaskPing email notifications on mobile');
+        console.log('3. 📱 Receive Claude-Code-Remote email notifications on mobile');
         console.log('4. 💬 Reply to email with commands on mobile');
         console.log('5. 🤖 Claude at home automatically receives and executes commands');
         console.log('6. 🔄 Repeat above process, completely unattended\n');

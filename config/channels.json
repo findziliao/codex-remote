@@ -26,7 +26,7 @@
           "pass": "kKgS3tNReRTL3RQC"
         }
       },
-      "from": "TaskPing Notification System <noreply@pandalla.ai>",
+      "from": "Claude-Code-Remote Notification System <noreply@pandalla.ai>",
       "to": "jiaxicui446@gmail.com",
       "template": {
         "checkInterval": 30
@@ -38,7 +38,7 @@
     "enabled": false,
     "config": {
       "webhook": "",
-      "username": "TaskPing",
+      "username": "Claude-Code-Remote",
       "avatar": null
     }
   },

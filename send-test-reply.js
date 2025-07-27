@@ -23,7 +23,7 @@ async function sendTestReply() {
     const mailOptions = {
         from: 'jiaxicui446@gmail.com',
         to: 'noreply@pandalla.ai',
-        subject: `Re: [TaskPing #${testToken}] Claude Code Task Completed - TaskPing`,
+        subject: `Re: [Claude-Code-Remote #${testToken}] Claude Code Task Completed - Claude-Code-Remote`,
         text: 'Please explain the basic principles of quantum computing',
         replyTo: 'jiaxicui446@gmail.com'
     };

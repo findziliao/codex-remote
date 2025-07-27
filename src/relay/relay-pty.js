@@ -119,7 +119,7 @@ function cleanEmailText(text = '') {
             line.includes('Session ID:') ||
             line.includes('Session ID:') ||
             line.includes('<noreply@pandalla.ai>') ||
-            line.includes('TaskPing Notification System') ||
+            line.includes('Claude-Code-Remote Notification System') ||
             line.includes('on 2025') && line.includes('wrote:') ||
             line.match(/^>.*/) ||  // Quote lines start with >
             line.includes('From:') && line.includes('@') ||
@@ -160,7 +160,7 @@ function cleanEmailText(text = '') {
         }
         
         // Skip remaining email quotes
-        if (trimmedLine.includes('TaskPing Notification System') ||
+        if (trimmedLine.includes('Claude-Code-Remote Notification System') ||
             trimmedLine.includes('<noreply@pandalla.ai>') ||
             trimmedLine.includes('on 2025')) {
             continue;

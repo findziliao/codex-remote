@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * TaskPing - Claude Code Smart Notification System
+ * Claude-Code-Remote - Claude Code Smart Notification System
  * Main entry point for the CLI tool
  */
 
@@ -9,7 +9,7 @@ const Logger = require('./src/core/logger');
 const Notifier = require('./src/core/notifier');
 const ConfigManager = require('./src/core/config');
 
-class TaskPingCLI {
+class ClaudeCodeRemoteCLI {
     constructor() {
         this.logger = new Logger('CLI');
         this.config = new ConfigManager();
@@ -97,7 +97,7 @@ class TaskPingCLI {
         const typeIndex = args.findIndex(arg => arg === '--type');
         
         if (typeIndex === -1 || typeIndex + 1 >= args.length) {
-            console.error('Usage: taskping notify --type <completed|waiting>');
+            console.error('Usage: claude-remote notify --type <completed|waiting>');
             process.exit(1);
         }
 
@@ -184,7 +184,7 @@ class TaskPingCLI {
     async handleStatus(args) {
         const status = this.notifier.getStatus();
         
-        console.log('TaskPing Status\n');
+        console.log('Claude-Code-Remote Status\n');
         console.log('Configuration:');
         console.log(`  Enabled: ${status.enabled ? 'Yes' : 'No'}`);
         console.log(`  Language: ${status.config.language}`);
@@ -284,7 +284,7 @@ class TaskPingCLI {
                 await this.cleanupRelay(args.slice(1));
                 break;
             default:
-                console.error('Usage: taskping relay <start|stop|status|cleanup>');
+                console.error('Usage: claude-remote relay <start|stop|status|cleanup>');
                 console.log('');
                 console.log('Commands:');
                 console.log('  start    Start email command relay service');
@@ -302,7 +302,7 @@ class TaskPingCLI {
             
             if (!emailConfig || !emailConfig.enabled) {
                 console.error('❌ Email channel not configured or disabled');
-                console.log('Please run first: taskping config');
+                console.log('Please run first: claude-remote config');
                 process.exit(1);
             }
 
@@ -445,8 +445,8 @@ class TaskPingCLI {
             console.log('  channels  - Notification channel configuration (config/channels.json)');
             console.log('  default   - Default configuration template (config/default.json)');
             console.log('');
-            console.log('Usage: taskping edit-config <configuration-type>');
-            console.log('Example: taskping edit-config channels');
+            console.log('Usage: claude-remote edit-config <configuration-type>');
+            console.log('Example: claude-remote edit-config channels');
             return;
         }
 
@@ -485,7 +485,7 @@ class TaskPingCLI {
             editorProcess.on('close', (code) => {
                 if (code === 0) {
                     console.log('✅ Configuration file saved');
-                    console.log('💡 Run "taskping status" to view updated configuration');
+                    console.log('💡 Run "claude-remote status" to view updated configuration');
                 } else {
                     console.log('❌ Editor exited abnormally');
                 }
@@ -534,7 +534,7 @@ class TaskPingCLI {
         };
 
         try {
-            console.log('🚀 TaskPing Email Quick Setup Wizard\n');
+            console.log('🚀 Claude-Code-Remote Email Quick Setup Wizard\n');
 
             // Select email provider
             console.log('Please select your email provider:');
@@ -625,7 +625,7 @@ class TaskPingCLI {
                             pass: password
                         }
                     },
-                    from: `TaskPing <${email}>`,
+                    from: `Claude-Code-Remote <${email}>`,
                     to: email,
                     template: {
                         checkInterval: 30
@@ -649,9 +649,9 @@ class TaskPingCLI {
 
             console.log('\n✅ Email configuration saved!');
             console.log('\n🧪 You can now test email functionality:');
-            console.log('  taskping test');
+            console.log('  claude-remote test');
             console.log('\n🚀 Start command relay service:');
-            console.log('  taskping relay start');
+            console.log('  claude-remote relay start');
 
             // Ask if user wants to test immediately
             const testNow = await question('\nTest email sending now? (y/n): ');
@@ -672,8 +672,8 @@ class TaskPingCLI {
     }
 
     async handleDaemon(args) {
-        const TaskPingDaemon = require('./src/daemon/taskping-daemon');
-        const daemon = new TaskPingDaemon();
+        const ClaudeCodeRemoteDaemon = require('./src/daemon/taskping-daemon');
+        const daemon = new ClaudeCodeRemoteDaemon();
         
         const command = args[0];
         
@@ -691,7 +691,7 @@ class TaskPingCLI {
                 daemon.showStatus();
                 break;
             default:
-                console.log('Usage: taskping daemon <start|stop|restart|status>');
+                console.log('Usage: claude-remote daemon <start|stop|restart|status>');
                 console.log('');
                 console.log('Commands:');
                 console.log('  start    Start background daemon process');
@@ -752,7 +752,7 @@ class TaskPingCLI {
                 break;
                 
             default:
-                console.log('Usage: taskping commands <list|status|cleanup|clear>');
+                console.log('Usage: claude-remote commands <list|status|cleanup|clear>');
                 console.log('');
                 console.log('Commands:');
                 console.log('  list     Show pending email commands');
@@ -881,7 +881,7 @@ class TaskPingCLI {
                 console.log('   • Insufficient permissions');
                 console.log('   • Application not responding');
                 console.log('\n🔧 Suggestions:');
-                console.log('   1. Run "taskping setup-permissions" to check permissions');
+                console.log('   1. Run "claude-remote setup-permissions" to check permissions');
                 console.log('   2. Ensure Claude Code is running in foreground');
                 console.log('   3. Try manually clicking input box in Claude Code first');
             }
@@ -898,9 +898,9 @@ class TaskPingCLI {
 
     showHelp() {
         console.log(`
-TaskPing - Claude Code Smart Notification System
+Claude-Code-Remote - Claude Code Smart Notification System
 
-Usage: taskping <command> [options]
+Usage: claude-remote <command> [options]
 
 Commands:
   notify --type <type>    Send a notification (completed|waiting)
@@ -941,30 +941,30 @@ Commands Subcommands:
   commands clear         Clear all pending commands
 
 Examples:
-  taskping notify --type completed
-  taskping test
-  taskping setup-email             # Quick email setup (recommended)
-  taskping edit-config channels    # Edit configuration files directly
-  taskping config                  # Interactive configuration
-  taskping install
-  taskping daemon start              # Start background service (recommended)
-  taskping daemon status             # View service status  
-  taskping test-claude               # Test full automation (recommended)
-  taskping commands list             # View pending email commands
-  taskping relay start               # Run in foreground (need to keep window open)
+  claude-remote notify --type completed
+  claude-remote test
+  claude-remote setup-email             # Quick email setup (recommended)
+  claude-remote edit-config channels    # Edit configuration files directly
+  claude-remote config                  # Interactive configuration
+  claude-remote install
+  claude-remote daemon start              # Start background service (recommended)
+  claude-remote daemon status             # View service status  
+  claude-remote test-claude               # Test full automation (recommended)
+  claude-remote commands list             # View pending email commands
+  claude-remote relay start               # Run in foreground (need to keep window open)
 
-For more information, visit: https://github.com/TaskPing/TaskPing
+For more information, visit: https://github.com/Claude-Code-Remote/Claude-Code-Remote
         `);
     }
 }
 
 // Run CLI if this file is executed directly
 if (require.main === module) {
-    const cli = new TaskPingCLI();
+    const cli = new ClaudeCodeRemoteCLI();
     cli.run().catch(error => {
         console.error('Fatal error:', error.message);
         process.exit(1);
     });
 }
 
-module.exports = TaskPingCLI;
+module.exports = ClaudeCodeRemoteCLI;

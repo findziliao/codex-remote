@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * TaskPing Daemon Service
+ * Claude-Code-Remote Daemon Service
  * Background daemon process for monitoring emails and processing remote commands
  */
 
@@ -11,11 +11,11 @@ const { spawn, exec } = require('child_process');
 const Logger = require('../core/logger');
 const ConfigManager = require('../core/config');
 
-class TaskPingDaemon {
+class ClaudeCodeRemoteDaemon {
     constructor() {
         this.logger = new Logger('Daemon');
         this.config = new ConfigManager();
-        this.pidFile = path.join(__dirname, '../data/taskping.pid');
+        this.pidFile = path.join(__dirname, '../data/claude-code-remote.pid');
         this.logFile = path.join(__dirname, '../data/daemon.log');
         this.relayService = null;
         this.isRunning = false;
@@ -31,8 +31,8 @@ class TaskPingDaemon {
         try {
             // Check if already running
             if (this.isAlreadyRunning()) {
-                console.log('❌ TaskPing daemon is already running');
-                console.log('💡 Use "taskping daemon stop" to stop existing service');
+                console.log('❌ Claude-Code-Remote daemon is already running');
+                console.log('💡 Use "claude-remote daemon stop" to stop existing service');
                 process.exit(1);
             }
 
@@ -50,7 +50,7 @@ class TaskPingDaemon {
     }
 
     async startDetached() {
-        console.log('🚀 Starting TaskPing daemon...');
+        console.log('🚀 Starting Claude-Code-Remote daemon...');
 
         // Create child process
         const child = spawn(process.execPath, [__filename, '--foreground'], {
@@ -69,17 +69,17 @@ class TaskPingDaemon {
         // Detach child process
         child.unref();
 
-        console.log(`✅ TaskPing daemon started (PID: ${child.pid})`);
+        console.log(`✅ Claude-Code-Remote daemon started (PID: ${child.pid})`);
         console.log(`📝 Log file: ${this.logFile}`);
-        console.log('💡 Use "taskping daemon status" to view status');
-        console.log('💡 Use "taskping daemon stop" to stop service');
+        console.log('💡 Use "claude-remote daemon status" to view status');
+        console.log('💡 Use "claude-remote daemon stop" to stop service');
     }
 
     async startForeground() {
-        console.log('🚀 TaskPing daemon starting...');
+        console.log('🚀 Claude-Code-Remote daemon starting...');
         
         this.isRunning = true;
-        process.title = 'taskping-daemon';
+        process.title = 'claude-code-remote-daemon';
 
         // Load configuration
         this.config.load();
@@ -174,13 +174,13 @@ class TaskPingDaemon {
 
     async stop() {
         if (!this.isAlreadyRunning()) {
-            console.log('❌ TaskPing daemon is not running');
+            console.log('❌ Claude-Code-Remote daemon is not running');
             return;
         }
 
         try {
             const pid = this.getPid();
-            console.log(`🛑 Stopping TaskPing daemon (PID: ${pid})...`);
+            console.log(`🛑 Stopping Claude-Code-Remote daemon (PID: ${pid})...`);
             
             // Send SIGTERM signal
             process.kill(pid, 'SIGTERM');
@@ -188,7 +188,7 @@ class TaskPingDaemon {
             // Wait for process to end
             await this.waitForStop(pid);
             
-            console.log('✅ TaskPing daemon stopped');
+            console.log('✅ Claude-Code-Remote daemon stopped');
         } catch (error) {
             console.error('❌ Failed to stop daemon:', error.message);
             
@@ -201,7 +201,7 @@ class TaskPingDaemon {
     }
 
     async restart() {
-        console.log('🔄 Restarting TaskPing daemon...');
+        console.log('🔄 Restarting Claude-Code-Remote daemon...');
         await this.stop();
         await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
         await this.start();
@@ -223,7 +223,7 @@ class TaskPingDaemon {
     showStatus() {
         const status = this.getStatus();
         
-        console.log('📊 TaskPing daemon status\n');
+        console.log('📊 Claude-Code-Remote daemon status\n');
         
         if (status.running) {
             console.log('✅ Status: Running');
@@ -310,7 +310,7 @@ class TaskPingDaemon {
 
 // Command line interface
 if (require.main === module) {
-    const daemon = new TaskPingDaemon();
+    const daemon = new ClaudeCodeRemoteDaemon();
     const command = process.argv[2];
 
     (async () => {
@@ -332,7 +332,7 @@ if (require.main === module) {
                     daemon.showStatus();
                     break;
                 default:
-                    console.log('Usage: taskping-daemon <start|stop|restart|status>');
+                    console.log('Usage: claude-code-remote-daemon <start|stop|restart|status>');
                     process.exit(1);
             }
         } catch (error) {
@@ -342,4 +342,4 @@ if (require.main === module) {
     })();
 }
 
-module.exports = TaskPingDaemon;
+module.exports = ClaudeCodeRemoteDaemon;

@@ -21,7 +21,7 @@
           "pass": "your-app-password"
         }
       },
-      "from": "TaskPing <your-email@gmail.com>",
+      "from": "Claude-Code-Remote <your-email@gmail.com>",
       "to": "your-email@gmail.com",
       "template": {
         "checkInterval": 30
@@ -44,5 +44,5 @@
 #
 # After Configuration:
 # 1. Copy email section to config/channels.json
-# 2. Run: taskping test
-# 3. Run: taskping relay start
+# 2. Run: claude-remote test
+# 3. Run: claude-remote relay start

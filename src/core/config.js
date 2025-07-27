@@ -1,5 +1,5 @@
 /**
- * TaskPing Configuration Manager
+ * Claude-Code-Remote Configuration Manager
  * Handles loading, merging, and saving configurations
  */
 
@@ -78,7 +78,7 @@ class ConfigManager {
                 enabled: false,
                 config: {
                     webhook: '',
-                    username: 'TaskPing',
+                    username: 'Claude-Code-Remote',
                     avatar: null
                 }
             },

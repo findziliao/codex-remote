@@ -43,7 +43,7 @@ class DesktopChannel extends NotificationChannel {
         try {
             // Try terminal-notifier first
             try {
-                const cmd = `terminal-notifier -title "${title}" -message "${message}" -sound "${sound}" -group "taskping"`;
+                const cmd = `terminal-notifier -title "${title}" -message "${message}" -sound "${sound}" -group "claude-code-remote"`;
                 execSync(cmd, { timeout: 3000 });
                 return true;
             } catch (e) {
@@ -81,7 +81,7 @@ class DesktopChannel extends NotificationChannel {
             $xml.toast.visual.binding.text[0].AppendChild($xml.CreateTextNode("${title}")) > $null
             $xml.toast.visual.binding.text[1].AppendChild($xml.CreateTextNode("${message}")) > $null
             $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
-            [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("TaskPing").Show($toast)
+            [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("Claude-Code-Remote").Show($toast)
             `;
             
             execSync(`powershell -Command "${script}"`, { timeout: 5000 });

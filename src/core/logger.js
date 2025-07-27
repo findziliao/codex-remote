@@ -1,12 +1,12 @@
 /**
- * TaskPing Logger
+ * Claude-Code-Remote Logger
  * Centralized logging utility
  */
 
 class Logger {
-    constructor(namespace = 'TaskPing') {
+    constructor(namespace = 'Claude-Code-Remote') {
         this.namespace = namespace;
-        this.logLevel = process.env.TASKPING_LOG_LEVEL || 'info';
+        this.logLevel = process.env.CLAUDE_CODE_REMOTE_LOG_LEVEL || 'info';
     }
 
     _log(level, message, ...args) {

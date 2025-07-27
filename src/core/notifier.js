@@ -1,5 +1,5 @@
 /**
- * TaskPing Core Notifier
+ * Claude-Code-Remote Core Notifier
  * Central notification orchestrator that manages multiple channels
  */
 

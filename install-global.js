@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Global Installation Script for TaskPing claude-control
+ * Global Installation Script for Claude-Code-Remote claude-control
  * Makes claude-control.js accessible from any directory
  */
 
@@ -43,20 +43,20 @@ function createGlobalScript() {
 const path = require('path');
 const { spawn } = require('child_process');
 
-// TaskPing installation directory
-const TASKPING_DIR = '${__dirname}';
-const CLAUDE_CONTROL_PATH = path.join(TASKPING_DIR, 'claude-control.js');
+// Claude-Code-Remote installation directory
+const CLAUDE_CODE_REMOTE_DIR = '${__dirname}';
+const CLAUDE_CONTROL_PATH = path.join(CLAUDE_CODE_REMOTE_DIR, 'claude-control.js');
 
 // Get command line arguments (excluding node and script name)
 const args = process.argv.slice(2);
 
-// Change to TaskPing directory before execution
-process.chdir(TASKPING_DIR);
+// Change to Claude-Code-Remote directory before execution
+process.chdir(CLAUDE_CODE_REMOTE_DIR);
 
 // Execute claude-control.js with original arguments
 const child = spawn('node', [CLAUDE_CONTROL_PATH, ...args], {
     stdio: 'inherit',
-    env: { ...process.env, TASKPING_HOME: TASKPING_DIR }
+    env: { ...process.env, CLAUDE_CODE_REMOTE_HOME: CLAUDE_CODE_REMOTE_DIR }
 });
 
 child.on('error', (error) => {
@@ -119,7 +119,7 @@ function uninstall() {
 }
 
 function showHelp() {
-    console.log('TaskPing Claude Control - Global Installation\n');
+    console.log('Claude-Code-Remote Claude Control - Global Installation\n');
     console.log('Usage:');
     console.log('  node install-global.js [install]   - Install globally');
     console.log('  node install-global.js uninstall   - Uninstall');

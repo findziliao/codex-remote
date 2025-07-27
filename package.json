@@ -1,13 +1,13 @@
 {
-  "name": "taskping",
+  "name": "claude-code-remote",
   "version": "1.0.0",
   "description": "Claude Code Smart Notification System - Send desktop notifications when Claude completes tasks or needs input",
   "main": "hook-notify.js",
   "scripts": {
-    "config": "node taskping-config.js",
-    "daemon:start": "node taskping.js daemon start",
-    "daemon:stop": "node taskping.js daemon stop",
-    "daemon:status": "node taskping.js daemon status",
+    "config": "node claude-remote-config.js",
+    "daemon:start": "node claude-remote.js daemon start",
+    "daemon:stop": "node claude-remote.js daemon stop",
+    "daemon:status": "node claude-remote.js daemon status",
     "relay:pty": "node start-relay-pty.js",
     "relay:start": "INJECTION_MODE=pty node src/relay/relay-pty.js"
   },
@@ -22,7 +22,7 @@
     "claude",
     "ai-assistant"
   ],
-  "author": "TaskPing Team",
+  "author": "Claude-Code-Remote Team",
   "license": "MIT",
   "engines": {
     "node": ">=14.0.0"
@@ -34,12 +34,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/TaskPing/TaskPing.git"
+    "url": "https://github.com/Claude-Code-Remote/Claude-Code-Remote.git"
   },
   "bugs": {
-    "url": "https://github.com/TaskPing/TaskPing/issues"
+    "url": "https://github.com/Claude-Code-Remote/Claude-Code-Remote/issues"
   },
-  "homepage": "https://github.com/TaskPing/TaskPing#readme",
+  "homepage": "https://github.com/Claude-Code-Remote/Claude-Code-Remote#readme",
   "dependencies": {
     "dotenv": "^17.2.1",
     "execa": "^9.6.0",

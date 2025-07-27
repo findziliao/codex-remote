@@ -1,5 +1,5 @@
 /**
- * TaskPing Installer
+ * Claude-Code-Remote Installer
  * Handles installation and configuration of Claude Code hooks
  */
 
@@ -50,7 +50,7 @@ class Installer {
     }
 
     async run(args = []) {
-        console.log('=== TaskPing Claude Code Installer ===\n');
+        console.log('=== Claude-Code-Remote Claude Code Installer ===\n');
 
         // Check dependencies
         if (!this.checkDependencies()) {
@@ -120,7 +120,7 @@ class Installer {
     }
 
     createHooksConfig() {
-        const taskpingPath = path.join(this.projectDir, 'taskping.js');
+        const claudeRemotePath = path.join(this.projectDir, 'claude-remote.js');
         
         return {
             hooks: {
@@ -130,7 +130,7 @@ class Installer {
                         hooks: [
                             {
                                 type: "command",
-                                command: `node "${taskpingPath}" notify --type completed`,
+                                command: `node "${claudeRemotePath}" notify --type completed`,
                                 timeout: 5
                             }
                         ]
@@ -142,7 +142,7 @@ class Installer {
                         hooks: [
                             {
                                 type: "command", 
-                                command: `node "${taskpingPath}" notify --type waiting`,
+                                command: `node "${claudeRemotePath}" notify --type waiting`,
                                 timeout: 5
                             }
                         ]
@@ -209,8 +209,8 @@ class Installer {
         console.log('\nTesting installation...');
         
         try {
-            const TaskPingCLI = require('../../taskping');
-            const cli = new TaskPingCLI();
+            const ClaudeCodeRemoteCLI = require('../../claude-remote');
+            const cli = new ClaudeCodeRemoteCLI();
             await cli.init();
             
             console.log('Testing task completion notification...');
@@ -237,9 +237,9 @@ class Installer {
         console.log('• You will receive reminders when Claude is waiting for input');
         console.log('');
         console.log('Common commands:');
-        console.log(`  node "${path.join(this.projectDir, 'taskping.js')}" config`);
-        console.log(`  node "${path.join(this.projectDir, 'taskping.js')}" test`);
-        console.log(`  node "${path.join(this.projectDir, 'taskping.js')}" status`);
+        console.log(`  node "${path.join(this.projectDir, 'claude-remote.js')}" config`);
+        console.log(`  node "${path.join(this.projectDir, 'claude-remote.js')}" test`);
+        console.log(`  node "${path.join(this.projectDir, 'claude-remote.js')}" status`);
         console.log('');
         console.log('To uninstall, manually delete the hooks configuration from Claude Code settings.');
     }
