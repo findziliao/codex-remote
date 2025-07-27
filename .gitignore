@@ -47,4 +47,6 @@ build/
 
 # Temporary files
 tmp/
-temp/
+temp/src/data/sessions/
+src/data/processed-messages.json
+src/data/session-map.json
