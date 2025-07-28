@@ -1,156 +1,156 @@
-# TaskPing 邮件回复功能使用指南
+# TaskPing Email Reply Feature Guide
 
-[English](./HOW_TO_USE_EMAIL_REPLY_EN.md) | **中文**
+**English** | [中文](./HOW_TO_USE_EMAIL_REPLY_ZH.md)
 
-## 📋 完整使用流程
+## 📋 Complete Usage Workflow
 
-### 步骤1：启动邮件监听服务
-在终端1中运行：
+### Step 1: Start Email Listening Service
+Run in Terminal 1:
 ```bash
 cd /Users/jessytsui/dev/TaskPing
 npm run relay:pty
 ```
 
-这会启动邮件监听服务，监听 `noreply@example.com` 收到的回复邮件。
+This will start the email listening service, monitoring replies to `noreply@example.com`.
 
-### 步骤2：启动Claude Code并集成TaskPing
-在终端2中运行：
+### Step 2: Start Claude Code and Integrate TaskPing
+Run in Terminal 2:
 ```bash
-# 启动Claude Code
+# Start Claude Code
 claude
 
-# 在Claude Code中使用TaskPing发送邮件通知
-# 例如：当任务完成时会自动发送邮件
+# Use TaskPing in Claude Code to send email notifications
+# Example: Email notifications will be sent automatically when tasks complete
 ```
 
-### 步骤3：配置Claude Code钩子（如果还没配置）
-在Claude Code中运行：
+### Step 3: Configure Claude Code Hooks (if not configured)
+Run in Claude Code:
 ```bash
-# 查看当前钩子配置
+# View current hook configuration
 cat ~/.config/claude-code/settings/hooks.json
 
-# 如果没有配置，需要设置TaskPing钩子
-# 复制TaskPing的钩子配置文件
+# If not configured, set up TaskPing hooks
+# Copy TaskPing's hook configuration file
 ```
 
-## 📧 邮件回复测试流程
+## 📧 Email Reply Test Workflow
 
-### 方法1：手动测试发送邮件
+### Method 1: Manual Email Test
 ```bash
-# 在TaskPing目录中运行
+# Run in TaskPing directory
 node test-smtp-token.js
 ```
 
-这会发送一封测试邮件到 `user@example.com`，邮件主题包含Token格式：
-`[TaskPing #XXXXXXXX] Claude Code 任务完成 - TaskPing-Token-Test`
+This will send a test email to `user@example.com` with a subject containing Token format:
+`[TaskPing #XXXXXXXX] Claude Code Task Completed - TaskPing-Token-Test`
 
-### 方法2：实际集成测试
-1. 在Claude Code中执行一个任务
-2. 任务完成后，TaskPing会自动发送邮件通知
-3. 邮件会发送到配置的邮箱（`user@example.com`）
+### Method 2: Integration Test
+1. Execute a task in Claude Code
+2. After task completion, TaskPing will automatically send email notification
+3. Email will be sent to configured mailbox (`user@example.com`)
 
-## 💌 如何回复邮件发送命令
+## 💌 How to Reply to Send Commands
 
-### 收到邮件后：
-1. 在 `user@example.com` 收到邮件，主题如：
+### After Receiving Email:
+1. Receive email at `user@example.com` with subject like:
    ```
-   [TaskPing #A53PXR7F] Claude Code 任务完成 - 项目名
-   ```
-
-2. **直接回复邮件**，在正文中输入命令：
-   ```
-   继续优化代码
-   ```
-   或
-   ```
-   生成单元测试
-   ```
-   或
-   ```
-   解释这个函数的作用
+   [TaskPing #A53PXR7F] Claude Code Task Completed - Project Name
    ```
 
-3. 发送回复后，邮件监听服务会：
-   - 收到回复邮件
-   - 提取Token（A53PXR7F）
-   - 找到对应的PTY会话
-   - 将命令注入到Claude Code CLI
+2. **Reply directly to the email** with commands in the body:
+   ```
+   Continue optimizing code
+   ```
+   or
+   ```
+   Generate unit tests
+   ```
+   or
+   ```
+   Explain the purpose of this function
+   ```
 
-## 🔧 配置文件说明
+3. After sending reply, the email listening service will:
+   - Receive the reply email
+   - Extract the Token (A53PXR7F)
+   - Find corresponding PTY session
+   - Inject command into Claude Code CLI
 
-### .env 配置
+## 🔧 Configuration File Description
+
+### .env Configuration
 ```env
-# 发件配置（飞书邮箱）
+# Outgoing Mail Configuration (Feishu Email)
 SMTP_HOST=smtp.feishu.cn
 SMTP_USER=noreply@example.com
-SMTP_PASS=kKgS3tNReRTL3RQC
+SMTP_PASS=your-smtp-password
 
-# 收件配置（飞书邮箱）  
+# Incoming Mail Configuration (Feishu Email)  
 IMAP_HOST=imap.feishu.cn
 IMAP_USER=noreply@example.com
-IMAP_PASS=kKgS3tNReRTL3RQC
+IMAP_PASS=your-imap-password
 
-# 用户通知邮箱
+# User Notification Email
 EMAIL_TO=user@example.com
 
-# 允许发送命令的邮箱（安全白名单）
+# Allowed Command Senders (Security Whitelist)
 ALLOWED_SENDERS=user@example.com
 ```
 
-## 🐛 故障排除
+## 🐛 Troubleshooting
 
-### 1. 收不到邮件回复
-检查：
-- 邮件监听服务是否正在运行（`npm run relay:pty`）
-- 是否从白名单邮箱（`user@example.com`）发送回复
-- 邮件主题是否包含正确的Token格式
+### 1. Not Receiving Email Replies
+Check:
+- Email listening service is running (`npm run relay:pty`)
+- Reply is sent from whitelisted email (`user@example.com`)
+- Email subject contains correct Token format
 
-### 2. 命令没有注入到Claude Code
-检查：
-- Claude Code是否还在运行
-- PTY会话是否还有效（Token未过期）
-- 检查服务日志输出
+### 2. Commands Not Injected into Claude Code
+Check:
+- Claude Code is still running
+- PTY session is still valid (Token not expired)
+- Check service log output
 
-### 3. 查看调试日志
+### 3. View Debug Logs
 ```bash
-# 查看详细的邮件监听日志
+# View detailed email listening logs
 DEBUG=true npm run relay:pty
 ```
 
-## 📱 支持的邮件客户端
+## 📱 Supported Email Clients
 
-用户可以从任意邮箱回复到 `noreply@example.com`：
-- ✅ Gmail 网页版/客户端
-- ✅ 手机Gmail APP
+Users can reply from any email to `noreply@example.com`:
+- ✅ Gmail Web/Client
+- ✅ Mobile Gmail App
 - ✅ Apple Mail
 - ✅ Outlook
-- ✅ QQ邮箱
-- ✅ 163邮箱
-- ✅ 任何支持SMTP的邮箱
+- ✅ QQ Mail
+- ✅ 163 Mail
+- ✅ Any SMTP-supported email
 
-## 🔒 安全特性
+## 🔒 Security Features
 
-1. **Token验证**：每个会话有唯一Token，防止误操作
-2. **发件人白名单**：只有授权邮箱可以发送命令
-3. **会话过期**：Token有24小时有效期
-4. **命令过滤**：自动过滤潜在危险命令
+1. **Token Verification**: Each session has unique Token to prevent misoperation
+2. **Sender Whitelist**: Only authorized emails can send commands
+3. **Session Expiry**: Token valid for 24 hours
+4. **Command Filtering**: Automatically filters potentially dangerous commands
 
-## 🎯 实际使用场景
+## 🎯 Real-world Use Cases
 
-### 场景1：长时间构建
+### Scenario 1: Long Build Process
 ```
-1. 在Claude Code中启动项目构建
-2. 离开电脑，在手机收到构建完成邮件
-3. 手机直接回复："继续部署到生产环境"
-4. 回到电脑时部署已完成
-```
-
-### 场景2：代码审查
-```
-1. Claude Code完成代码生成
-2. 收到邮件通知
-3. 回复："请添加单元测试和文档"
-4. Claude自动生成测试和文档
+1. Start project build in Claude Code
+2. Leave computer, receive build completion email on phone
+3. Reply directly from phone: "Continue deployment to production"
+4. Deployment completed when returning to computer
 ```
 
-这样就可以实现真正的远程控制Claude Code了！
+### Scenario 2: Code Review
+```
+1. Claude Code completes code generation
+2. Receive email notification
+3. Reply: "Please add unit tests and documentation"
+4. Claude automatically generates tests and docs
+```
+
+This enables true remote control of Claude Code!
