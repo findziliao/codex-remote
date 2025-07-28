@@ -162,8 +162,8 @@ class RemoteControlSetup {
     }
     
     createNewSession(resolve) {
-        // Use Claude-Code-Remote home directory as working directory
-        const workingDir = this.claudeCodeRemoteHome;
+        // Use current working directory as working directory for Claude session
+        const workingDir = process.cwd();
         const command = `tmux new-session -d -s ${this.sessionName} -c "${workingDir}" clauderun`;
         
         console.log(`🚀 Creating Claude tmux session: ${this.sessionName}`);
