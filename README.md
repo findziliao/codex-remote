@@ -187,6 +187,10 @@ MIT License - Feel free to use and modify!
 
 **🚀 Make Claude Code truly remote and accessible from anywhere!**
 
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=JessyTsui/Claude-Code-Remote&type=Date)](https://star-history.com/#JessyTsui/Claude-Code-Remote&Date)
+
 ⭐ **Star this repo** if it helps you code more efficiently!
 
 > 💡 **Tip**: Share your remote coding setup on Twitter and tag [@Jiaxi_Cui](https://x.com/Jiaxi_Cui) - we love seeing how developers use Claude Code Remote!
