@@ -178,7 +178,8 @@ class RemoteControlSetup {
                 }
                 // If clauderun fails, try using full path command
                 console.log('🔄 Trying full path command...');
-                const fallbackCommand = `tmux new-session -d -s ${this.sessionName} -c "${workingDir}" /Users/jessytsui/.nvm/versions/node/v18.17.0/bin/claude --dangerously-skip-permissions`;
+                const claudePath = process.env.CLAUDE_CLI_PATH || 'claude';
+                const fallbackCommand = `tmux new-session -d -s ${this.sessionName} -c "${workingDir}" ${claudePath} --dangerously-skip-permissions`;
                 exec(fallbackCommand, (fallbackError) => {
                     if (fallbackError) {
                         console.log(`❌ Full path command also failed: ${fallbackError.message}`);
@@ -234,7 +235,7 @@ class RemoteControlSetup {
         
         console.log('📱 Email testing:');
         console.log('   Token will include session information, automatically routing to correct tmux session');
-        console.log('   Recipient email: jiaxicui446@gmail.com');
+        console.log(`   Recipient email: ${process.env.EMAIL_TO}`);
         console.log('   Reply with command: echo "Remote control test"\n');
         
         console.log('🚨 Important reminders:');

@@ -89,12 +89,11 @@ function isAllowed(fromAddress) {
     return ALLOWED_SENDERS.some(allowed => addr.includes(allowed));
 }
 
-// Extract TaskPing token from subject
+// Extract Claude-Code-Remote token from subject
 function extractTokenFromSubject(subject = '') {
     const patterns = [
-        /\[TaskPing\s+#([A-Za-z0-9_-]+)\]/,
-        /\[TaskPing\s+([A-Za-z0-9_-]+)\]/,
-        /TaskPing:\s*([A-Za-z0-9_-]+)/i
+        /\[Claude-Code-Remote\s+#([A-Z0-9]+)\]/,
+        /Re:\s*\[Claude-Code-Remote\s+#([A-Z0-9]+)\]/
     ];
     
     for (const pattern of patterns) {
@@ -118,7 +117,7 @@ function cleanEmailText(text = '') {
             line.includes('On') && line.includes('wrote:') ||
             line.includes('Session ID:') ||
             line.includes('Session ID:') ||
-            line.includes('<noreply@pandalla.ai>') ||
+            line.includes(`<${process.env.SMTP_USER}>`) ||
             line.includes('Claude-Code-Remote Notification System') ||
             line.includes('on 2025') && line.includes('wrote:') ||
             line.match(/^>.*/) ||  // Quote lines start with >
@@ -161,7 +160,7 @@ function cleanEmailText(text = '') {
         
         // Skip remaining email quotes
         if (trimmedLine.includes('Claude-Code-Remote Notification System') ||
-            trimmedLine.includes('<noreply@pandalla.ai>') ||
+            trimmedLine.includes(`<${process.env.SMTP_USER}>`) ||
             trimmedLine.includes('on 2025')) {
             continue;
         }
