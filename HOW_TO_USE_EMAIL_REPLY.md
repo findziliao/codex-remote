@@ -9,7 +9,7 @@ cd /Users/jessytsui/dev/TaskPing
 npm run relay:pty
 ```
 
-这会启动邮件监听服务，监听 `noreply@pandalla.ai` 收到的回复邮件。
+这会启动邮件监听服务，监听 `noreply@example.com` 收到的回复邮件。
 
 ### 步骤2：启动Claude Code并集成TaskPing
 在终端2中运行：
@@ -39,18 +39,18 @@ cat ~/.config/claude-code/settings/hooks.json
 node test-smtp-token.js
 ```
 
-这会发送一封测试邮件到 `jiaxicui446@gmail.com`，邮件主题包含Token格式：
+这会发送一封测试邮件到 `user@example.com`，邮件主题包含Token格式：
 `[TaskPing #XXXXXXXX] Claude Code 任务完成 - TaskPing-Token-Test`
 
 ### 方法2：实际集成测试
 1. 在Claude Code中执行一个任务
 2. 任务完成后，TaskPing会自动发送邮件通知
-3. 邮件会发送到配置的邮箱（`jiaxicui446@gmail.com`）
+3. 邮件会发送到配置的邮箱（`user@example.com`）
 
 ## 💌 如何回复邮件发送命令
 
 ### 收到邮件后：
-1. 在 `jiaxicui446@gmail.com` 收到邮件，主题如：
+1. 在 `user@example.com` 收到邮件，主题如：
    ```
    [TaskPing #A53PXR7F] Claude Code 任务完成 - 项目名
    ```
@@ -80,19 +80,19 @@ node test-smtp-token.js
 ```env
 # 发件配置（飞书邮箱）
 SMTP_HOST=smtp.feishu.cn
-SMTP_USER=noreply@pandalla.ai
+SMTP_USER=noreply@example.com
 SMTP_PASS=kKgS3tNReRTL3RQC
 
 # 收件配置（飞书邮箱）  
 IMAP_HOST=imap.feishu.cn
-IMAP_USER=noreply@pandalla.ai
+IMAP_USER=noreply@example.com
 IMAP_PASS=kKgS3tNReRTL3RQC
 
 # 用户通知邮箱
-EMAIL_TO=jiaxicui446@gmail.com
+EMAIL_TO=user@example.com
 
 # 允许发送命令的邮箱（安全白名单）
-ALLOWED_SENDERS=jiaxicui446@gmail.com
+ALLOWED_SENDERS=user@example.com
 ```
 
 ## 🐛 故障排除
@@ -100,7 +100,7 @@ ALLOWED_SENDERS=jiaxicui446@gmail.com
 ### 1. 收不到邮件回复
 检查：
 - 邮件监听服务是否正在运行（`npm run relay:pty`）
-- 是否从白名单邮箱（`jiaxicui446@gmail.com`）发送回复
+- 是否从白名单邮箱（`user@example.com`）发送回复
 - 邮件主题是否包含正确的Token格式
 
 ### 2. 命令没有注入到Claude Code
@@ -117,7 +117,7 @@ DEBUG=true npm run relay:pty
 
 ## 📱 支持的邮件客户端
 
-用户可以从任意邮箱回复到 `noreply@pandalla.ai`：
+用户可以从任意邮箱回复到 `noreply@example.com`：
 - ✅ Gmail 网页版/客户端
 - ✅ 手机Gmail APP
 - ✅ Apple Mail
