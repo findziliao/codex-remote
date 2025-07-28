@@ -103,6 +103,8 @@ claude
 3. **Reply to emails** with new commands
 4. **Commands execute automatically** in Claude
 
+📖 **Detailed Email Reply Guide**: [English](./HOW_TO_USE_EMAIL_REPLY_EN.md) | [中文](./HOW_TO_USE_EMAIL_REPLY.md)
+
 ### Example Email Flow
 
 **📩 Notification received:**

@@ -1,5 +1,7 @@
 # TaskPing 邮件回复功能使用指南
 
+[English](./HOW_TO_USE_EMAIL_REPLY_EN.md) | **中文**
+
 ## 📋 完整使用流程
 
 ### 步骤1：启动邮件监听服务
