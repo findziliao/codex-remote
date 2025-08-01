@@ -42,13 +42,13 @@ Control [Claude Code](https://claude.ai/code) remotely via multiple messaging pl
 ## 📅 Changelog
 
 ### August 2025
-- **2025-08-02**: Add full execution trace to email notifications ([#14](https://github.com/JessyTsui/Claude-Code-Remote/pull/14))
-- **2025-08-01**: Enhanced Multi-Channel Notification System (by @laihenyi @JessyTsui)
+- **2025-08-02**: Add full execution trace to email notifications ([#14](https://github.com/JessyTsui/Claude-Code-Remote/pull/14) by [@vaclisinc](https://github.com/vaclisinc))
+- **2025-08-01**: Enhanced Multi-Channel Notification System ([#1](https://github.com/JessyTsui/Claude-Code-Remote/pull/1) by [@laihenyi](https://github.com/laihenyi) [@JessyTsui](https://github.com/JessyTsui))
   - ✅ **Telegram Integration Completed** - Interactive buttons, real-time commands, smart personal/group chat handling
   - ✅ **Multi-Channel Notifications** - Simultaneous delivery to Desktop, Telegram, Email, LINE
   - ✅ **Smart Sound Alerts** - Always-on audio feedback with customizable sounds
   - ✅ **Intelligent Session Management** - Auto-detection, real conversation content, 24-hour tokens
-- **2025-08-01**: Fix #9 #12: Add configuration to disable subagent notifications ([#10](https://github.com/JessyTsui/Claude-Code-Remote/pull/10))
+- **2025-08-01**: Fix #9 #12: Add configuration to disable subagent notifications ([#10](https://github.com/JessyTsui/Claude-Code-Remote/pull/10) by [@vaclisinc](https://github.com/vaclisinc))
 - **2025-08-01**: Implement terminal-style UI for email notifications ([#8](https://github.com/JessyTsui/Claude-Code-Remote/pull/8) by [@vaclisinc](https://github.com/vaclisinc))
 - **2025-08-01**: Fix working directory issue - enable claude-remote to run from any directory ([#7](https://github.com/JessyTsui/Claude-Code-Remote/pull/7) by [@vaclisinc](https://github.com/vaclisinc))
 
