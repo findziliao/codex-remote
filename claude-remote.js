@@ -155,19 +155,31 @@ class ClaudeCodeRemoteCLI {
             }
         }
         
-        // For completed notifications, include subagent activities
+        // For completed notifications, include subagent activities and execution trace
         if (type === 'completed') {
-            const SubagentTracker = require('./src/utils/subagent-tracker');
-            const tracker = new SubagentTracker();
-            const trackingKey = metadata.tmuxSession || 'default';
+            const Config = require('./src/core/config');
+            const config = new Config();
+            config.load();
+            const showSubagentActivitiesInEmail = config.get('showSubagentActivitiesInEmail', false);
             
-            // Get and format subagent activities
-            const subagentSummary = tracker.formatActivitiesForEmail(trackingKey);
-            if (subagentSummary) {
-                metadata.subagentActivities = subagentSummary;
-                this.logger.info('Including subagent activities in completion email');
+            if (showSubagentActivitiesInEmail) {
+                const SubagentTracker = require('./src/utils/subagent-tracker');
+                const tracker = new SubagentTracker();
+                const trackingKey = metadata.tmuxSession || 'default';
                 
-                // Clear activities after including them
+                // Get and format subagent activities
+                const subagentSummary = tracker.formatActivitiesForEmail(trackingKey);
+                if (subagentSummary) {
+                    metadata.subagentActivities = subagentSummary;
+                }
+                
+                // Clear activities after including them in the notification
+                tracker.clearActivities(trackingKey);
+            } else {
+                // Always clear activities even if not showing them
+                const SubagentTracker = require('./src/utils/subagent-tracker');
+                const tracker = new SubagentTracker();
+                const trackingKey = metadata.tmuxSession || 'default';
                 tracker.clearActivities(trackingKey);
             }
         }
@@ -207,11 +219,13 @@ class ClaudeCodeRemoteCLI {
             // Use TmuxMonitor to capture conversation
             const tmuxMonitor = new TmuxMonitor();
             const conversation = tmuxMonitor.getRecentConversation(currentSession);
+            const fullTrace = tmuxMonitor.getFullExecutionTrace(currentSession);
             
             return {
                 userQuestion: conversation.userQuestion,
                 claudeResponse: conversation.claudeResponse,
-                tmuxSession: currentSession
+                tmuxSession: currentSession,
+                fullExecutionTrace: fullTrace
             };
         } catch (error) {
             this.logger.debug('Failed to capture conversation:', error.message);
