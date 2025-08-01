@@ -25,8 +25,8 @@ Control [Claude Code](https://claude.ai/code) remotely via multiple messaging pl
 ## ✨ Features
 
 - **📧 Multiple Messaging Platforms**: 
-  - Email notifications with full execution trace and reply-to-send commands
-  - Telegram Bot with interactive buttons and slash commands ✅ **NEW**
+  - Email notifications with full execution trace and reply-to-send commands ![](./assets/email_demo.png)
+  - Telegram Bot with interactive buttons and slash commands ![](./assets/telegram_demo.png)
   - LINE messaging with token-based commands
   - Desktop notifications with sound alerts
 - **🔄 Two-way Control**: Reply to messages or emails to send new commands
