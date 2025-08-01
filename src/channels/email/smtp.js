@@ -24,6 +24,18 @@ class EmailChannel extends NotificationChannel {
         this._initializeTransporter();
     }
 
+    _escapeHtml(text) {
+        if (!text) return '';
+        const htmlEntities = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        };
+        return text.replace(/[&<>"']/g, char => htmlEntities[char]);
+    }
+
     _ensureDirectories() {
         if (!fs.existsSync(this.sessionsDir)) {
             fs.mkdirSync(this.sessionsDir, { recursive: true });
@@ -286,7 +298,8 @@ class EmailChannel extends NotificationChannel {
             userQuestion: userQuestion || 'No specified task',
             claudeResponse: claudeResponse || notification.message,
             projectDir: projectDir,
-            shortQuestion: shortQuestion || 'No specific question'
+            shortQuestion: shortQuestion || 'No specific question',
+            subagentActivities: notification.metadata?.subagentActivities || ''
         };
 
         let subject = enhancedSubject;
@@ -297,7 +310,9 @@ class EmailChannel extends NotificationChannel {
         Object.keys(variables).forEach(key => {
             const placeholder = new RegExp(`{{${key}}}`, 'g');
             subject = subject.replace(placeholder, variables[key]);
-            html = html.replace(placeholder, variables[key]);
+            // Escape HTML entities for HTML content
+            html = html.replace(placeholder, this._escapeHtml(variables[key]));
+            // No escaping needed for plain text
             text = text.replace(placeholder, variables[key]);
         });
 
@@ -356,6 +371,8 @@ class EmailChannel extends NotificationChannel {
                                 </div>
                             </div>
                             
+                            {{subagentActivities}}
+                            
                             <!-- Continue Instructions -->
                             <div style="margin: 30px 0 20px 0; border-top: 1px solid #333; padding-top: 20px;">
                                 <span style="color: #999;">$</span> <span style="color: #00ff00;">claude-code help --continue</span><br>
@@ -397,6 +414,8 @@ Status: {{type}}
 
 🤖 Claude's Response:
 {{claudeResponse}}
+
+{{subagentActivities}}
 
 How to Continue Conversation:
 To continue conversation with Claude Code, please reply to this email directly and enter your instructions in the email body.
