@@ -33,11 +33,23 @@ class TelegramWebhookHandler {
     _setupRoutes() {
         // Telegram webhook endpoint
         this.app.post('/webhook/telegram', this._handleWebhook.bind(this));
-        
+
         // Health check endpoint
         this.app.get('/health', (req, res) => {
             res.json({ status: 'ok', service: 'telegram-webhook' });
         });
+    }
+
+    /**
+     * Generate network options for axios requests
+     * @returns {Object} Network options object
+     */
+    _getNetworkOptions() {
+        const options = {};
+        if (this.config.forceIPv4) {
+            options.family = 4;
+        }
+        return options;
     }
 
     async _handleWebhook(req, res) {
@@ -226,7 +238,8 @@ class TelegramWebhookHandler {
 
         try {
             const response = await axios.get(
-                `${this.apiBaseUrl}/bot${this.config.botToken}/getMe`
+                `${this.apiBaseUrl}/bot${this.config.botToken}/getMe`,
+                this._getNetworkOptions()
             );
             
             if (response.data.ok && response.data.result.username) {
@@ -277,7 +290,8 @@ class TelegramWebhookHandler {
                     chat_id: chatId,
                     text: text,
                     ...options
-                }
+                },
+                this._getNetworkOptions()
             );
         } catch (error) {
             this.logger.error('Failed to send message:', error.response?.data || error.message);
@@ -291,7 +305,8 @@ class TelegramWebhookHandler {
                 {
                     callback_query_id: callbackQueryId,
                     text: text
-                }
+                },
+                this._getNetworkOptions()
             );
         } catch (error) {
             this.logger.error('Failed to answer callback query:', error.response?.data || error.message);
@@ -305,9 +320,10 @@ class TelegramWebhookHandler {
                 {
                     url: webhookUrl,
                     allowed_updates: ['message', 'callback_query']
-                }
+                },
+                this._getNetworkOptions()
             );
-            
+
             this.logger.info('Webhook set successfully:', response.data);
             return response.data;
         } catch (error) {
