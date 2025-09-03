@@ -321,6 +321,8 @@ class TmuxMonitor extends EventEmitter {
         
         // Look for Claude Code specific patterns
         const lines = recentBuffer;
+        let allClaudeResponses = [];
+        
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             
@@ -331,10 +333,21 @@ class TmuxMonitor extends EventEmitter {
             }
             
             // Look for Claude response (● prefix for tools, ⎿ for results, ✻ for status)
-            if ((line.startsWith('● ') || line.startsWith('⎿ ') || line.startsWith('✻ ')) && line.length > 2) {
-                claudeResponse = line.substring(2).trim();
-                break;
+            // Also handle indented ⎿ lines
+            if ((line.startsWith('● ') || line.startsWith('⎿ ') || line.startsWith('✻ ') || line.match(/^\s+⎿\s+/)) && line.length > 2) {
+                let content;
+                if (line.startsWith('● ') || line.startsWith('⎿ ') || line.startsWith('✻ ')) {
+                    content = line.substring(2).trim();
+                } else if (line.match(/^\s+⎿\s+/)) {
+                    content = line.replace(/^\s*⎿\s*/, '');
+                }
+                allClaudeResponses.push(content);
             }
+        }
+        
+        // Join all Claude responses
+        if (allClaudeResponses.length > 0) {
+            claudeResponse = allClaudeResponses.join('\n');
         }
         
         // If we didn't find the specific format, use fallback
@@ -659,14 +672,29 @@ class TmuxMonitor extends EventEmitter {
             }
             
             // Detect Claude response (current format: ●, ⎿, ✻)
-            if (line.startsWith('● ') || line.startsWith('⎿ ') || line.startsWith('✻ ') || 
+            // Also include indented ⎿ lines (like "  ⎿  content")
+            if (line.startsWith('● ') || line.startsWith('⎿ ') || line.startsWith('✻ ') ||
+                line.match(/^\s+⎿\s+/) || // Indented ⎿ lines
                 (inResponse && line.length > 0 && 
                  !line.startsWith('╭') && !line.startsWith('│') && !line.startsWith('╰') &&
                  !line.startsWith('> ') && !line.includes('? for shortcuts'))) {
                 
-                if (line.startsWith('● ') || line.startsWith('⎿ ') || line.startsWith('✻ ')) {
+                if (line.startsWith('● ') || line.startsWith('⎿ ') || line.startsWith('✻ ') || line.match(/^\s+⎿\s+/)) {
                     inResponse = true;
-                    responseLines = [line.substring(2).trim()]; // Remove prefix
+                    // Extract content after the symbol, preserving indentation for ⎿ lines
+                    let content;
+                    if (line.startsWith('● ') || line.startsWith('⎿ ') || line.startsWith('✻ ')) {
+                        content = line.substring(2).trim();
+                    } else if (line.match(/^\s+⎿\s+/)) {
+                        content = line.replace(/^\s*⎿\s*/, ''); // Keep content formatting
+                    }
+                    
+                    // Accumulate all response content instead of resetting
+                    if (responseLines.length === 0) {
+                        responseLines = [content]; // First response line
+                    } else {
+                        responseLines.push(content); // Additional response lines
+                    }
                 } else if (inResponse) {
                     responseLines.push(line);
                 }
