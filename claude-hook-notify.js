@@ -109,13 +109,36 @@ async function sendHookNotification() {
             // Not in tmux or tmux not available, use default
         }
         
+        // Try to get conversation content from tmux session
+        const TmuxMonitor = require('./src/utils/tmux-monitor');
+        const tmuxMonitor = new TmuxMonitor();
+        let metadata = {};
+        
+        if (tmuxSession) {
+            try {
+                const conversation = tmuxMonitor.getRecentConversation(tmuxSession);
+                metadata = {
+                    userQuestion: conversation.userQuestion || 'Recent command',
+                    claudeResponse: conversation.claudeResponse || 'Task completed',
+                    tmuxSession: tmuxSession
+                };
+            } catch (error) {
+                console.log('⚠️ Could not extract conversation:', error.message);
+                metadata = {
+                    userQuestion: 'Recent command',
+                    claudeResponse: `Claude has ${notificationType === 'completed' ? 'completed a task' : 'is waiting for input'}`,
+                    tmuxSession: tmuxSession
+                };
+            }
+        }
+
         // Create notification
         const notification = {
             type: notificationType,
             title: `Claude ${notificationType === 'completed' ? 'Task Completed' : 'Waiting for Input'}`,
             message: `Claude has ${notificationType === 'completed' ? 'completed a task' : 'is waiting for input'}`,
-            project: projectName
-            // Don't set metadata here - let TelegramChannel extract real conversation content
+            project: projectName,
+            metadata: metadata
         };
         
         console.log(`📱 Sending ${notificationType} notification for project: ${projectName}`);
