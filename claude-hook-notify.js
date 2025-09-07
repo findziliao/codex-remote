@@ -47,12 +47,14 @@ async function sendHookNotification() {
         const channels = [];
         const results = [];
         
-        // Configure Desktop channel (always enabled for sound)
-        const desktopChannel = new DesktopChannel({
-            completedSound: 'Glass',
-            waitingSound: 'Tink'
-        });
-        channels.push({ name: 'Desktop', channel: desktopChannel });
+        // Configure Desktop channel if enabled
+        if (process.env.DESKTOP_ENABLED !== 'false') {
+            const desktopChannel = new DesktopChannel({
+                completedSound: 'Glass',
+                waitingSound: 'Tink'
+            });
+            channels.push({ name: 'Desktop', channel: desktopChannel });
+        }
         
         // Configure Telegram channel if enabled
         if (process.env.TELEGRAM_ENABLED === 'true' && process.env.TELEGRAM_BOT_TOKEN) {
