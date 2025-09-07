@@ -172,19 +172,33 @@ class FeishuChannel extends NotificationChannel {
     }
 
     /**
-     * Extract content starting from the last ● symbol
+     * Extract content starting from the last ● symbol that starts a line
      * @param {string} response - Full Claude response
-     * @returns {string} Content starting from last ● symbol
+     * @returns {string} Content starting from last line-starting ● symbol
      */
     _extractFromLastBullet(response) {
         if (!response) return '';
         
-        const lastBulletIndex = response.lastIndexOf('●');
-        if (lastBulletIndex === -1) {
-            return response; // 如果没有●符号，返回完整内容
+        // 按行分割文本
+        const lines = response.split('\n');
+        let lastLineStartingWithBullet = -1;
+        
+        // 从后往前查找，找到最后一个以●符号开头的行
+        for (let i = lines.length - 1; i >= 0; i--) {
+            const line = lines[i].trim();
+            if (line.startsWith('●')) {
+                lastLineStartingWithBullet = i;
+                break;
+            }
         }
         
-        return response.substring(lastBulletIndex).trim();
+        if (lastLineStartingWithBullet === -1) {
+            return response; // 如果没有以●符号开头的行，返回完整内容
+        }
+        
+        // 重新构建从该行开始的内容
+        const resultLines = lines.slice(lastLineStartingWithBullet);
+        return resultLines.join('\n').trim();
     }
 
     /**
