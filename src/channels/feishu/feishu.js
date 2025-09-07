@@ -172,11 +172,11 @@ class FeishuChannel extends NotificationChannel {
     }
 
     /**
-     * Extract content after the last ● symbol
+     * Extract content starting from the last ● symbol
      * @param {string} response - Full Claude response
-     * @returns {string} Content after last ● symbol
+     * @returns {string} Content starting from last ● symbol
      */
-    _extractAfterLastBullet(response) {
+    _extractFromLastBullet(response) {
         if (!response) return '';
         
         const lastBulletIndex = response.lastIndexOf('●');
@@ -231,7 +231,7 @@ ${userQuestion}`;
             }
             
             if (notification.metadata.claudeResponse) {
-                const bulletContent = this._extractAfterLastBullet(notification.metadata.claudeResponse);
+                const bulletContent = this._extractFromLastBullet(notification.metadata.claudeResponse);
                 textContent += `
 
 🤖 Claude回复:
