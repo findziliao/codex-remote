@@ -172,69 +172,35 @@ class FeishuChannel extends NotificationChannel {
     }
 
     /**
-     * Extract content starting from the last ● symbol that starts a line
+     * Extract content from the last ● symbol line to the end
      * @param {string} response - Full Claude response
-     * @returns {string} Content starting from last line-starting ● symbol
+     * @returns {string} Content from last ● symbol line to end
      */
     _extractFromLastBullet(response) {
         if (!response) return '';
         
         // 按行分割文本
         const lines = response.split('\n');
-        let lastLineStartingWithBullet = -1;
+        const bulletLineIndices = [];
         
-        // 系统错误信息模式，需要过滤掉
-        const systemErrorPatterns = [
-            /^● Stop \[node.*\] failed with non-blocking status code/,
-            /^● Stop \[.*\] failed/,
-            /^● \[.*\] failed/,
-            /^● Error:/,
-            /^● Warning:/
-        ];
-        
-        // 从后往前查找，找到最后一个有效的以●符号开头的行
-        for (let i = lines.length - 1; i >= 0; i--) {
+        // 收集所有以●符号开头的行号位置
+        for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (line.startsWith('●')) {
-                // 检查是否是系统错误信息
-                const isSystemError = systemErrorPatterns.some(pattern => pattern.test(line));
-                
-                if (!isSystemError) {
-                    lastLineStartingWithBullet = i;
-                    break;
-                }
-                // 如果是系统错误信息，继续查找上一个●符号
+                bulletLineIndices.push(i);
             }
         }
         
-        if (lastLineStartingWithBullet === -1) {
-            return response; // 如果没有有效的以●符号开头的行，返回完整内容
+        if (bulletLineIndices.length === 0) {
+            return response; // 如果没有●符号开头的行，返回完整内容
         }
         
-        // 重新构建从该行开始的内容，并过滤掉后续的系统错误信息
-        const resultLines = [];
-        let foundSystemError = false;
+        // 获取最后一个●符号开头的行号
+        const lastBulletLineIndex = bulletLineIndices[bulletLineIndices.length - 1];
         
-        for (let i = lastLineStartingWithBullet; i < lines.length; i++) {
-            const line = lines[i].trim();
-            
-            // 检查是否是系统错误信息行
-            const isSystemErrorLine = systemErrorPatterns.some(pattern => pattern.test(line));
-            
-            if (isSystemErrorLine) {
-                foundSystemError = true;
-                continue; // 跳过系统错误信息行
-            }
-            
-            // 如果已经发现系统错误信息，并且遇到空行或者新的内容，停止添加
-            if (foundSystemError && line.length === 0) {
-                break;
-            }
-            
-            resultLines.push(lines[i]);
-        }
-        
-        return resultLines.join('\n').trim();
+        // 返回从该行开始一直到结尾的所有内容
+        const resultLines = lines.slice(lastBulletLineIndex);
+        return resultLines.join('\n');
     }
 
     /**
