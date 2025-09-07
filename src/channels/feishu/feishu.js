@@ -172,6 +172,22 @@ class FeishuChannel extends NotificationChannel {
     }
 
     /**
+     * Extract content after the last ● symbol
+     * @param {string} response - Full Claude response
+     * @returns {string} Content after last ● symbol
+     */
+    _extractAfterLastBullet(response) {
+        if (!response) return '';
+        
+        const lastBulletIndex = response.lastIndexOf('●');
+        if (lastBulletIndex === -1) {
+            return response; // 如果没有●符号，返回完整内容
+        }
+        
+        return response.substring(lastBulletIndex).trim();
+    }
+
+    /**
      * Format notification message for Feishu
      * @param {Object} notification - Notification object
      * @returns {Object} Formatted message
@@ -215,13 +231,11 @@ ${userQuestion}`;
             }
             
             if (notification.metadata.claudeResponse) {
-                const claudeResponse = notification.metadata.claudeResponse.length > 500 
-                    ? notification.metadata.claudeResponse.substring(0, 500) + '...'
-                    : notification.metadata.claudeResponse;
+                const bulletContent = this._extractAfterLastBullet(notification.metadata.claudeResponse);
                 textContent += `
 
 🤖 Claude回复:
-${claudeResponse}`;
+${bulletContent}`;
             }
         } else {
             // 如果没有metadata，使用基本消息
