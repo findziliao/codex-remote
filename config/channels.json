@@ -38,10 +38,16 @@
   },
   "feishu": {
     "type": "chat",
-    "enabled": false,
+    "enabled": true,
     "config": {
-      "webhook": "",
-      "secret": ""
+      "appId": "cli_a805c90e6936d00e",
+      "appSecret": "mUeXiG9EdhhEwZXHakTnfcbwNZbpSlUS",
+      "verificationToken": "LexsXnnWQkIHk3QjoUa8EgevWLbbjm13",
+      "userId": "ou_84e90a83a0ef775ca61508f1a0c7cae6",
+      "groupId": "",
+      "whitelist": [],
+      "webhookUrl": "https://claf.ai4me.top/webhook",
+      "port": 3002
     }
   },
   "line": {

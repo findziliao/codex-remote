@@ -2,7 +2,7 @@
 
 /**
  * Multi-Platform Webhook Server
- * Starts all enabled webhook servers (Telegram, LINE) in parallel
+ * Starts all enabled webhook servers (Telegram, LINE, Feishu) in parallel
  */
 
 const { spawn } = require('child_process');
@@ -50,6 +50,21 @@ if (process.env.LINE_ENABLED === 'true' && process.env.LINE_CHANNEL_ACCESS_TOKEN
     processes.push({ name: 'LINE', process: lineProcess });
 }
 
+// Start Feishu webhook if enabled
+if (process.env.FEISHU_ENABLED === 'true' && process.env.FEISHU_APP_ID) {
+    console.log('🚀 Starting Feishu webhook server...');
+    const feishuProcess = spawn('node', ['start-feishu-webhook.js'], {
+        stdio: ['inherit', 'inherit', 'inherit'],
+        env: process.env
+    });
+    
+    feishuProcess.on('exit', (code) => {
+        console.log(`🚀 Feishu webhook server exited with code ${code}`);
+    });
+    
+    processes.push({ name: 'Feishu', process: feishuProcess });
+}
+
 // Start Email daemon if enabled
 if (process.env.EMAIL_ENABLED === 'true' && process.env.SMTP_USER) {
     console.log('📧 Starting email daemon...');
@@ -69,6 +84,7 @@ if (processes.length === 0) {
     console.log('❌ No platforms enabled. Please configure at least one platform in .env file:');
     console.log('   - Set TELEGRAM_ENABLED=true and configure TELEGRAM_BOT_TOKEN');
     console.log('   - Set LINE_ENABLED=true and configure LINE_CHANNEL_ACCESS_TOKEN');
+    console.log('   - Set FEISHU_ENABLED=true and configure FEISHU_APP_ID');
     console.log('   - Set EMAIL_ENABLED=true and configure SMTP_USER');
     process.exit(1);
 }
@@ -84,6 +100,9 @@ if (process.env.TELEGRAM_ENABLED === 'true') {
 }
 if (process.env.LINE_ENABLED === 'true') {
     console.log('   LINE: Token TOKEN123 <command>');
+}
+if (process.env.FEISHU_ENABLED === 'true') {
+    console.log('   Feishu: /cmd TOKEN123 <command> or Token TOKEN123 <command>');
 }
 if (process.env.EMAIL_ENABLED === 'true') {
     console.log('   Email: Reply to notification emails');

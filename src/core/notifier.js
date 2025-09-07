@@ -66,7 +66,16 @@ class Notifier {
             this.registerChannel('telegram', telegram);
         }
 
+        // Load Feishu channel
+        const FeishuChannel = require('../channels/feishu/feishu');
+        const feishuConfig = this.config.getChannel('feishu');
+        if (feishuConfig && feishuConfig.enabled) {
+            const feishu = new FeishuChannel(feishuConfig.config || {});
+            this.registerChannel('feishu', feishu);
+        }
+
         // ✅ Telegram integration completed
+        // ✅ Feishu integration completed
         // TODO: Future channels - Discord, Slack, Teams, etc.
 
         this.logger.info(`Initialized ${this.channels.size} channels`);

@@ -35,6 +35,7 @@ if (fs.existsSync(envPath)) {
 const TelegramChannel = require('./src/channels/telegram/telegram');
 const DesktopChannel = require('./src/channels/local/desktop');
 const EmailChannel = require('./src/channels/email/smtp');
+const FeishuChannel = require('./src/channels/feishu/feishu');
 
 async function sendHookNotification() {
     try {
@@ -87,6 +88,25 @@ async function sendHookNotification() {
             if (emailConfig.smtp.host && emailConfig.smtp.auth.user && emailConfig.to) {
                 const emailChannel = new EmailChannel(emailConfig);
                 channels.push({ name: 'Email', channel: emailChannel });
+            }
+        }
+        
+        // Configure Feishu channel if enabled
+        if (process.env.FEISHU_ENABLED === 'true' && process.env.FEISHU_APP_ID) {
+            const feishuConfig = {
+                appId: process.env.FEISHU_APP_ID,
+                appSecret: process.env.FEISHU_APP_SECRET,
+                verificationToken: process.env.FEISHU_VERIFICATION_TOKEN,
+                userId: process.env.FEISHU_CHAT_ID,
+                groupId: process.env.FEISHU_GROUP_ID,
+                whitelist: process.env.FEISHU_WHITELIST ? process.env.FEISHU_WHITELIST.split(',') : [],
+                webhookUrl: process.env.FEISHU_WEBHOOK_URL,
+                port: parseInt(process.env.FEISHU_WEBHOOK_PORT) || 3002
+            };
+            
+            if (feishuConfig.appId && feishuConfig.appSecret && (feishuConfig.userId || feishuConfig.groupId)) {
+                const feishuChannel = new FeishuChannel(feishuConfig);
+                channels.push({ name: 'Feishu', channel: feishuChannel });
             }
         }
         
