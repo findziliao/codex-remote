@@ -196,14 +196,42 @@ class FeishuChannel extends NotificationChannel {
         const project = notification.project || '';
         const timestamp = new Date().toLocaleString('zh-CN');
 
-        // 使用简单文本格式以避免卡片JSON解析错误
-        const textContent = `${emoji} ${title}
+        // 构建消息内容，包含完整的Claude回复
+        let textContent = `${emoji} ${title}
 
 📁 项目: ${project || 'N/A'}
-⏰ 时间: ${timestamp}
+⏰ 时间: ${timestamp}`;
+
+        // 添加用户问题和Claude回复（如果有metadata）
+        if (notification.metadata) {
+            if (notification.metadata.userQuestion) {
+                const userQuestion = notification.metadata.userQuestion.length > 200 
+                    ? notification.metadata.userQuestion.substring(0, 200) + '...'
+                    : notification.metadata.userQuestion;
+                textContent += `
+
+📝 您的问题:
+${userQuestion}`;
+            }
+            
+            if (notification.metadata.claudeResponse) {
+                const claudeResponse = notification.metadata.claudeResponse.length > 500 
+                    ? notification.metadata.claudeResponse.substring(0, 500) + '...'
+                    : notification.metadata.claudeResponse;
+                textContent += `
+
+🤖 Claude回复:
+${claudeResponse}`;
+            }
+        } else {
+            // 如果没有metadata，使用基本消息
+            textContent += `
 
 📋 任务详情:
-${message}
+${message}`;
+        }
+
+        textContent += `
 
 🔑 会话令牌: ${token}
 
