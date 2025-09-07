@@ -183,21 +183,57 @@ class FeishuChannel extends NotificationChannel {
         const lines = response.split('\n');
         let lastLineStartingWithBullet = -1;
         
-        // 从后往前查找，找到最后一个以●符号开头的行
+        // 系统错误信息模式，需要过滤掉
+        const systemErrorPatterns = [
+            /^● Stop \[node.*\] failed with non-blocking status code/,
+            /^● Stop \[.*\] failed/,
+            /^● \[.*\] failed/,
+            /^● Error:/,
+            /^● Warning:/
+        ];
+        
+        // 从后往前查找，找到最后一个有效的以●符号开头的行
         for (let i = lines.length - 1; i >= 0; i--) {
             const line = lines[i].trim();
             if (line.startsWith('●')) {
-                lastLineStartingWithBullet = i;
-                break;
+                // 检查是否是系统错误信息
+                const isSystemError = systemErrorPatterns.some(pattern => pattern.test(line));
+                
+                if (!isSystemError) {
+                    lastLineStartingWithBullet = i;
+                    break;
+                }
+                // 如果是系统错误信息，继续查找上一个●符号
             }
         }
         
         if (lastLineStartingWithBullet === -1) {
-            return response; // 如果没有以●符号开头的行，返回完整内容
+            return response; // 如果没有有效的以●符号开头的行，返回完整内容
         }
         
-        // 重新构建从该行开始的内容
-        const resultLines = lines.slice(lastLineStartingWithBullet);
+        // 重新构建从该行开始的内容，并过滤掉后续的系统错误信息
+        const resultLines = [];
+        let foundSystemError = false;
+        
+        for (let i = lastLineStartingWithBullet; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            // 检查是否是系统错误信息行
+            const isSystemErrorLine = systemErrorPatterns.some(pattern => pattern.test(line));
+            
+            if (isSystemErrorLine) {
+                foundSystemError = true;
+                continue; // 跳过系统错误信息行
+            }
+            
+            // 如果已经发现系统错误信息，并且遇到空行或者新的内容，停止添加
+            if (foundSystemError && line.length === 0) {
+                break;
+            }
+            
+            resultLines.push(lines[i]);
+        }
+        
         return resultLines.join('\n').trim();
     }
 
