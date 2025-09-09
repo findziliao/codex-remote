@@ -224,53 +224,203 @@ class FeishuChannel extends NotificationChannel {
 
         const emoji = notification.type === 'completed' ? '✅' : '⏳';
         const title = notification.title || 'Claude Code Remote';
-        const message = notification.message || '';
         const project = notification.project || '';
         const timestamp = new Date().toLocaleString('zh-CN');
 
-        // 构建消息内容，包含完整的Claude回复
-        let textContent = `${emoji} ${title}
-
-📁 项目: ${project || 'N/A'}
-⏰ 时间: ${timestamp}`;
-
-        // 添加用户问题和Claude回复（如果有metadata）
-        if (notification.metadata) {
-            if (notification.metadata.userQuestion) {
-                const userQuestion = notification.metadata.userQuestion.length > 200 
-                    ? notification.metadata.userQuestion.substring(0, 200) + '...'
-                    : notification.metadata.userQuestion;
-                textContent += `
-
-📝 您的问题:
-${userQuestion}`;
-            }
-            
-            if (notification.metadata.claudeResponse) {
-                const bulletContent = this._extractFromLastBullet(notification.metadata.claudeResponse);
-                textContent += `
-
-🤖 Claude回复:
-${bulletContent}`;
-            }
-        } else {
-            // 如果没有metadata，使用基本消息
-            textContent += `
-
-📋 任务详情:
-${message}`;
+        // 提取Claude回复的关键信息（最多3句话）
+        let claudeSummary = '';
+        if (notification.metadata && notification.metadata.claudeResponse) {
+            const response = notification.metadata.claudeResponse;
+            // 移除特殊符号和代码块
+            const cleanResponse = response.replace(/```[\s\S]*?```/g, '').replace(/`([^`]+)`/g, '$1');
+            // 按句子分割
+            const sentences = cleanResponse.split(/[.!?。！？]/).filter(s => s.trim().length > 0);
+            // 取前3个句子
+            claudeSummary = sentences.slice(0, 3).join('。') + (sentences.length > 3 ? '...' : '');
         }
 
-        textContent += `
+        // 构建简洁的消息内容
+        const textContent = `${emoji} ${title}
 
-🔑 会话令牌: ${token}
+📁 ${project || 'N/A'} | ⏰ ${timestamp}
 
-💡 回复执行命令:
-/cmd ${token} <你的命令>`;
+${claudeSummary || notification.message || '任务已完成'}`;
+
+        // 创建交互式卡片消息
+        const cardContent = {
+            elements: [
+                {
+                    tag: 'div',
+                    text: {
+                        content: textContent,
+                        tag: 'lark_md'
+                    }
+                },
+                {
+                    tag: 'hr'
+                },
+                {
+                    tag: 'div',
+                    text: {
+                        content: '**快速回复**',
+                        tag: 'lark_md'
+                    }
+                },
+                {
+                    tag: 'action',
+                    actions: [
+                        {
+                            tag: 'button',
+                            text: {
+                                content: '继续',
+                                tag: 'plain_text'
+                            },
+                            type: 'primary',
+                            value: {
+                                cmd: '/cmd',
+                                token: token,
+                                command: '继续'
+                            }
+                        },
+                        {
+                            tag: 'button',
+                            text: {
+                                content: '解释',
+                                tag: 'plain_text'
+                            },
+                            type: 'default',
+                            value: {
+                                cmd: '/cmd',
+                                token: token,
+                                command: '解释一下刚才做了什么'
+                            }
+                        },
+                        {
+                            tag: 'button',
+                            text: {
+                                content: '测试',
+                                tag: 'plain_text'
+                            },
+                            type: 'default',
+                            value: {
+                                cmd: '/cmd',
+                                token: token,
+                                command: 'npm test'
+                            }
+                        }
+                    ]
+                },
+                {
+                    tag: 'note',
+                    elements: [
+                        {
+                            tag: 'plain_text',
+                            content: `会话令牌: ${token}`
+                        }
+                    ]
+                }
+            ]
+        };
 
         return {
-            msg_type: 'text',
-            content: textContent
+            msg_type: 'interactive',
+            card: {
+                config: {
+                    wide_screen_mode: true
+                },
+                elements: [
+                    {
+                        tag: 'div',
+                        text: {
+                            content: `${emoji} ${title}`,
+                            tag: 'plain_text'
+                        }
+                    },
+                    {
+                        tag: 'hr'
+                    },
+                    {
+                        tag: 'div',
+                        text: {
+                            content: `📁 ${project || 'N/A'} | ⏰ ${timestamp}`,
+                            tag: 'lark_md'
+                        }
+                    },
+                    {
+                        tag: 'hr'
+                    },
+                    {
+                        tag: 'div',
+                        text: {
+                            content: claudeSummary || notification.message || '任务已完成',
+                            tag: 'lark_md'
+                        }
+                    },
+                    {
+                        tag: 'hr'
+                    },
+                    {
+                        tag: 'div',
+                        text: {
+                            content: '**快速回复**',
+                            tag: 'lark_md'
+                        }
+                    },
+                    {
+                        tag: 'action',
+                        actions: [
+                            {
+                                tag: 'button',
+                                text: {
+                                    content: '继续',
+                                    tag: 'plain_text'
+                                },
+                                type: 'primary',
+                                value: {
+                                    cmd: '/cmd',
+                                    token: token,
+                                    command: '继续'
+                                }
+                            },
+                            {
+                                tag: 'button',
+                                text: {
+                                    content: '解释',
+                                    tag: 'plain_text'
+                                },
+                                type: 'default',
+                                value: {
+                                    cmd: '/cmd',
+                                    token: token,
+                                    command: '解释一下刚才做了什么'
+                                }
+                            },
+                            {
+                                tag: 'button',
+                                text: {
+                                    content: '测试',
+                                    tag: 'plain_text'
+                                },
+                                type: 'default',
+                                value: {
+                                    cmd: '/cmd',
+                                    token: token,
+                                    command: 'npm test'
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        tag: 'note',
+                        elements: [
+                            {
+                                tag: 'plain_text',
+                                content: `会话令牌: ${token}`
+                            }
+                        ]
+                    }
+                ]
+            }
         };
     }
 
