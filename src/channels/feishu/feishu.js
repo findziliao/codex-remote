@@ -401,17 +401,14 @@ ${message}`;
             const ControllerInjector = require('../../utils/controller-injector');
             const injector = new ControllerInjector();
 
-            const result = await injector.injectCommand(parsed.command, {
-                session: session.conversationContext,
-                channel: 'feishu',
-                messageId: context.messageId
-            });
+            const sessionName = session.conversationContext?.session || 'claude-session';
+            const result = await injector.injectCommand(parsed.command, sessionName);
 
-            if (result.success) {
+            if (result) {
                 this.logger.info('Command executed successfully via Feishu');
                 return true;
             } else {
-                this.logger.error('Command execution failed:', result.error);
+                this.logger.error('Command execution failed');
                 return false;
             }
         } catch (error) {

@@ -79,10 +79,24 @@ class FeishuWebhookHandler {
             return true;
         }
 
+        // 飞书签名算法：timestamp + "\n" + verificationToken + "\n" + body
+        const message = timestamp + "\n" + this.config.verificationToken + "\n" + body;
+        
         const expectedSignature = crypto
-            .createHash('sha256')
-            .update(timestamp + this.config.verificationToken + body)
-            .digest('hex');
+            .createHmac('sha256', this.config.verificationToken)
+            .update(message)
+            .digest('base64');
+
+        this.logger.debug('Signature verification:', {
+            timestamp,
+            timestampType: typeof timestamp,
+            message: message.substring(0, 100) + '...',
+            messageLength: message.length,
+            received: signature,
+            expected: expectedSignature,
+            match: signature === expectedSignature,
+            verificationToken: this.config.verificationToken ? 'present' : 'missing'
+        });
 
         return signature === expectedSignature;
     }
@@ -94,27 +108,72 @@ class FeishuWebhookHandler {
      */
     async _handleWebhook(req, res) {
         try {
-            const signature = req.headers['x-lark-signature'];
-            const timestamp = req.headers['x-lark-timestamp'];
             const body = JSON.stringify(req.body);
-
-            // Verify signature if verification token is configured
-            if (this.config.verificationToken && 
-                !this._verifySignature(signature, timestamp, body)) {
-                this.logger.warn('Invalid webhook signature');
-                return res.status(401).json({ error: 'Invalid signature' });
+            
+            // Check if this is a verification request (URL verification)
+            if (req.body && req.body.type === 'url_verification') {
+                this.logger.info('Received URL verification request, skipping signature verification');
+                return res.json({ challenge: req.body.challenge });
             }
-
+            
+            // For message events, check for signature headers
+            const signature = req.headers['x-lark-signature'] || 
+                            req.headers['X-Lark-Signature'] ||
+                            req.headers['x-lark_signature'] ||
+                            req.headers['X-Lark_Signature'];
+                            
+            const timestamp = req.headers['x-lark-timestamp'] || 
+                            req.headers['X-Lark-Timestamp'] ||
+                            req.headers['x-lark_timestamp'] ||
+                            req.headers['X-Lark_Timestamp'] ||
+                            req.headers['x-lark-request-timestamp'] ||
+                            req.headers['X-Lark-Request-Timestamp'];
+            
+            this.logger.debug('Headers received:', {
+                allHeaders: Object.keys(req.headers),
+                signature: signature ? 'present' : 'missing',
+                timestamp: timestamp ? 'present' : 'missing',
+                rawSignature: signature,
+                rawTimestamp: timestamp
+            });
+            
+            // For message events, verify signature if verification token is configured
             const event = req.body;
-            this.logger.debug('Received Feishu event:', event);
+            const eventType = event?.header?.event_type;
+            
+            this.logger.info('Received Feishu event:', { 
+                eventType: eventType,
+                hasBody: !!event,
+                eventId: event?.header?.event_id
+            });
+            
+            // Extract timestamp from header if not provided in headers
+            let finalTimestamp = timestamp;
+            if (!finalTimestamp && event?.header?.create_time) {
+                finalTimestamp = event.header.create_time;
+                this.logger.info('Using timestamp from event header:', finalTimestamp);
+            }
+            
+            // Only verify signature for message events
+            if (this.config.verificationToken && eventType === 'im.message.receive_v1') {
+                this.logger.info('Processing message event, checking signature');
+                if (!signature) {
+                    this.logger.warn('Missing signature headers for message event');
+                    return res.status(401).json({ error: 'Missing signature headers' });
+                }
+                
+                if (!this._verifySignature(signature, finalTimestamp, body)) {
+                    this.logger.warn('Invalid webhook signature');
+                    return res.status(401).json({ error: 'Invalid signature' });
+                }
+                this.logger.info('Signature verification successful for message event');
+            }
 
             // Handle different event types
-            if (event.type === 'url_verification') {
-                return res.json({ challenge: event.challenge });
-            }
-
-            if (event.type === 'im.message.receive_v1') {
+            if (eventType === 'im.message.receive_v1') {
                 await this._handleMessage(event);
+            } else {
+                this.logger.info('Ignoring event type:', eventType);
             }
 
             res.json({ ok: true });
@@ -130,16 +189,24 @@ class FeishuWebhookHandler {
      */
     async _handleMessage(event) {
         try {
+            this.logger.info('Handling Feishu message event:', {
+                messageId: event.event?.message?.message_id,
+                msgType: event.event?.message?.msg_type,
+                senderId: event.event?.sender?.sender_id?.user_id
+            });
+            
             const message = event.event.message;
             const sender = event.event.sender;
 
             // Handle different message types
             if (message.msg_type === 'text') {
+                this.logger.info('Processing text message');
                 await this._handleTextMessage(message, sender);
             } else if (message.msg_type === 'interactive') {
+                this.logger.info('Processing interactive message');
                 await this._handleInteractiveMessage(message, sender);
             } else {
-                this.logger.debug('Ignoring unsupported message type:', message.msg_type);
+                this.logger.info('Ignoring unsupported message type:', message.msg_type);
             }
         } catch (error) {
             this.logger.error('Error handling Feishu message:', error);
