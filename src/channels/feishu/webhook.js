@@ -80,25 +80,95 @@ class FeishuWebhookHandler {
         }
 
         // 飞书签名算法：timestamp + "\n" + verificationToken + "\n" + body
-        const message = timestamp + "\n" + this.config.verificationToken + "\n" + body;
+        // Try different message formats that Feishu might use
+        const message1 = timestamp + "\n" + this.config.verificationToken + "\n" + body;
+        const message2 = timestamp + this.config.verificationToken + body;
+        const message3 = timestamp + "\n" + body;
         
-        const expectedSignature = crypto
-            .createHmac('sha256', this.config.verificationToken)
-            .update(message)
-            .digest('base64');
-
+        // Try with normalized JSON (no whitespace)
+        let normalizedBody = body;
+        try {
+            normalizedBody = JSON.stringify(JSON.parse(body));
+        } catch (e) {
+            this.logger.debug('Failed to normalize body JSON:', e.message);
+        }
+        const message4 = timestamp + "\n" + this.config.verificationToken + "\n" + normalizedBody;
+        const message5 = timestamp + "\n" + normalizedBody;
+        
+        let finalMessage = message1;
+        let messageFormat = "timestamp\\nverificationToken\\nbody";
+        
+        // Calculate signature for each format to see which one matches
+        const signatures = {};
+        
+        signatures.format1 = {
+            message: message1,
+            hex: crypto.createHmac('sha256', this.config.verificationToken).update(message1).digest('hex'),
+            base64: crypto.createHmac('sha256', this.config.verificationToken).update(message1).digest('base64')
+        };
+        
+        signatures.format2 = {
+            message: message2,
+            hex: crypto.createHmac('sha256', this.config.verificationToken).update(message2).digest('hex'),
+            base64: crypto.createHmac('sha256', this.config.verificationToken).update(message2).digest('base64')
+        };
+        
+        signatures.format3 = {
+            message: message3,
+            hex: crypto.createHmac('sha256', this.config.verificationToken).update(message3).digest('hex'),
+            base64: crypto.createHmac('sha256', this.config.verificationToken).update(message3).digest('base64')
+        };
+        
+        signatures.format4 = {
+            message: message4,
+            hex: crypto.createHmac('sha256', this.config.verificationToken).update(message4).digest('hex'),
+            base64: crypto.createHmac('sha256', this.config.verificationToken).update(message4).digest('base64')
+        };
+        
+        signatures.format5 = {
+            message: message5,
+            hex: crypto.createHmac('sha256', this.config.verificationToken).update(message5).digest('hex'),
+            base64: crypto.createHmac('sha256', this.config.verificationToken).update(message5).digest('base64')
+        };
+        
+        // Check if any format matches
+        let matched = false;
+        for (const [format, sigs] of Object.entries(signatures)) {
+            if (sigs.hex === signature || sigs.base64 === signature) {
+                finalMessage = sigs.message;
+                messageFormat = format;
+                matched = true;
+                break;
+            }
+        }
+        
         this.logger.debug('Signature verification:', {
             timestamp,
             timestampType: typeof timestamp,
-            message: message.substring(0, 100) + '...',
-            messageLength: message.length,
             received: signature,
-            expected: expectedSignature,
-            match: signature === expectedSignature,
+            messageFormat,
+            matched,
+            signatures: {
+                format1: {
+                    hex: signatures.format1.hex,
+                    base64: signatures.format1.base64,
+                    match: signatures.format1.hex === signature || signatures.format1.base64 === signature
+                },
+                format2: {
+                    hex: signatures.format2.hex,
+                    base64: signatures.format2.base64,
+                    match: signatures.format2.hex === signature || signatures.format2.base64 === signature
+                },
+                format3: {
+                    hex: signatures.format3.hex,
+                    base64: signatures.format3.base64,
+                    match: signatures.format3.hex === signature || signatures.format3.base64 === signature
+                }
+            },
             verificationToken: this.config.verificationToken ? 'present' : 'missing'
         });
 
-        return signature === expectedSignature;
+        return matched;
     }
 
     /**
