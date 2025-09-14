@@ -294,60 +294,6 @@ ${claudeSummary || notification.message || '任务已完成'}`;
                     {
                         tag: 'div',
                         text: {
-                            content: '**快速回复**',
-                            tag: 'lark_md'
-                        }
-                    },
-                    {
-                        tag: 'action',
-                        actions: [
-                            {
-                                tag: 'button',
-                                text: {
-                                    content: '继续',
-                                    tag: 'plain_text'
-                                },
-                                type: 'primary',
-                                value: {
-                                    cmd: '/cmd',
-                                    token: token,
-                                    command: '继续'
-                                }
-                            },
-                            {
-                                tag: 'button',
-                                text: {
-                                    content: '解释',
-                                    tag: 'plain_text'
-                                },
-                                type: 'default',
-                                value: {
-                                    cmd: '/cmd',
-                                    token: token,
-                                    command: '解释一下刚才做了什么'
-                                }
-                            },
-                            {
-                                tag: 'button',
-                                text: {
-                                    content: '状态',
-                                    tag: 'plain_text'
-                                },
-                                type: 'default',
-                                value: {
-                                    cmd: '/cmd',
-                                    token: token,
-                                    command: 'npm run daemon:status'
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        tag: 'hr'
-                    },
-                    {
-                        tag: 'div',
-                        text: {
                             content: '**💡 发送自定义指令**',
                             tag: 'lark_md'
                         }
