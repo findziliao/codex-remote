@@ -442,11 +442,12 @@ class FeishuWebhookHandler {
                 return;
             }
 
-            // Use ControllerInjector to execute command
-            const ControllerInjector = require('../../utils/controller-injector');
-            const injector = new ControllerInjector();
+            const sessionName = session.conversationContext?.session || 'hook-session';
 
-            const sessionName = session.conversationContext?.session || 'claude-session';
+          // Use ControllerInjector to execute command
+            const ControllerInjector = require('../../utils/controller-injector');
+            const injector = new ControllerInjector({ mode: 'tmux', defaultSession: sessionName });
+
             const result = await injector.injectCommand(parsedCommand.command, sessionName);
             
             if (result) {

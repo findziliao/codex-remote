@@ -37,10 +37,19 @@ class ControllerInjector {
             // Send command to tmux session and execute it
             const escapedCommand = command.replace(/'/g, "'\\''");
             
-            // Send command first
-            execSync(`tmux send-keys -t ${sessionName} '${escapedCommand}'`);
-            // Then send Enter as separate command
-            execSync(`tmux send-keys -t ${sessionName} Enter`);
+            // Send Ctrl+C first to clear any pending operations
+            try {
+                execSync(`tmux send-keys -t ${sessionName} C-c`);
+                // Small delay to allow cancellation
+                execSync(`sleep 0.1`);
+            } catch (e) {
+                // Ignore if Ctrl+C fails
+            }
+
+            // Send command to specific pane (pane 0)
+            execSync(`tmux send-keys -t ${sessionName}.0 '${escapedCommand}'`);
+            // Send C-m (carriage return) to execute the command
+            execSync(`tmux send-keys -t ${sessionName}.0 C-m`);
             
             this.logger.info(`Command injected to tmux session '${sessionName}'`);
             return true;
