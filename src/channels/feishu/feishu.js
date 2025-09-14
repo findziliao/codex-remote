@@ -207,9 +207,13 @@ class FeishuChannel extends NotificationChannel {
         
         // 返回从该行开始一直到结尾的所有内容
         const resultLines = lines.slice(lastBulletLineIndex);
-        return resultLines.join('\n');
+        const result = resultLines.join('\n');
+        console.log(`[DEBUG] After bullet extraction, length: ${result.length}`);
+
+        return result;
     }
 
+  
     /**
      * Format notification message for Feishu
      * @param {Object} notification - Notification object
@@ -234,16 +238,40 @@ class FeishuChannel extends NotificationChannel {
         const project = notification.project || '';
         const timestamp = new Date().toLocaleString('zh-CN');
 
-        // 提取Claude回复的关键信息（最多3句话）
+        // 显示Claude的完整回复内容
         let claudeSummary = '';
         if (notification.metadata && notification.metadata.claudeResponse) {
             const response = notification.metadata.claudeResponse;
-            // 移除特殊符号和代码块
-            const cleanResponse = response.replace(/```[\s\S]*?```/g, '').replace(/`([^`]+)`/g, '$1');
-            // 按句子分割
-            const sentences = cleanResponse.split(/[.!?。！？]/).filter(s => s.trim().length > 0);
-            // 取前3个句子
-            claudeSummary = sentences.slice(0, 3).join('。') + (sentences.length > 3 ? '...' : '');
+            console.log(`[DEBUG] Raw response length: ${response.length}`);
+            console.log(`[DEBUG] Raw response preview: ${response.substring(0, 500)}...`);
+
+            // 提取从最后一个●符号开始的内容，如果没有●符号则显示完整内容
+            claudeSummary = this._extractFromLastBullet(response);
+            console.log(`[DEBUG] After bullet extraction length: ${claudeSummary.length}`);
+            console.log(`[DEBUG] After bullet extraction preview: ${claudeSummary.substring(0, 300)}...`);
+
+            // 保留代码块格式，确保正确显示
+            claudeSummary = claudeSummary.replace(/```([\s\S]*?)```/g, (match, code) => {
+                return '```\n' + code.trim() + '\n```';
+            });
+            // 保留内联代码格式
+            claudeSummary = claudeSummary.replace(/`([^`]+)`/g, '`$1`');
+
+            // 去掉最后五行（通常包含esc to interrupt、分隔线和状态信息）
+            const lines = claudeSummary.split('\n');
+            if (lines.length > 5) {
+                const originalLength = claudeSummary.length;
+                claudeSummary = lines.slice(0, -5).join('\n');
+                const removedLines = lines.slice(-5);
+                console.log(`[DEBUG] Removed last 5 lines: ${JSON.stringify(removedLines)}`);
+                console.log(`[DEBUG] Content length reduced from ${originalLength} to ${claudeSummary.length}`);
+            }
+
+            console.log(`[DEBUG] Final content length: ${claudeSummary.length}`);
+            console.log(`[DEBUG] Final content preview: ${claudeSummary.substring(0, 300)}...`);
+
+            // 保存回复内容到文件（同时保存原始和过滤后的内容用于对比）
+            this._saveResponseToFile(response, claudeSummary, notification);
         }
 
         // 构建简洁的消息内容
@@ -551,6 +579,88 @@ ${claudeSummary || notification.message || '任务已完成'}`;
             userId: this.config.userId ? 'configured' : 'not configured',
             groupId: this.config.groupId ? 'configured' : 'not configured'
         };
+    }
+
+    /**
+     * Save response content to file for analysis
+     * @param {string} originalContent - The original response content
+     * @param {string} filteredContent - The filtered response content
+     * @param {Object} notification - The notification object
+     */
+    _saveResponseToFile(originalContent, filteredContent, notification) {
+        const fs = require('fs');
+        const path = require('path');
+
+        try {
+            // 创建保存目录
+            const saveDir = path.join(__dirname, '../../../logs');
+            if (!fs.existsSync(saveDir)) {
+                fs.mkdirSync(saveDir, { recursive: true });
+            }
+
+            // 生成文件名（带时间戳）
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `feishu-response-${timestamp}.json`;
+            const filepath = path.join(saveDir, filename);
+
+            // 构建保存的数据结构（包含原始和过滤后的内容对比）
+            const saveData = {
+                timestamp: new Date().toISOString(),
+                notification: {
+                    type: notification.type,
+                    title: notification.title,
+                    project: notification.project,
+                    message: notification.message
+                },
+                comparison: {
+                    original: {
+                        content: originalContent,
+                        length: originalContent.length,
+                        wordCount: originalContent.split(/\s+/).length,
+                        lineCount: originalContent.split('\n').length,
+                        hasCodeBlocks: originalContent.includes('```'),
+                        hasInterruptPattern: /(esc to interrupt)/i.test(originalContent)
+                    },
+                    filtered: {
+                        content: filteredContent,
+                        length: filteredContent.length,
+                        wordCount: filteredContent.split(/\s+/).length,
+                        lineCount: filteredContent.split('\n').length,
+                        hasCodeBlocks: filteredContent.includes('```'),
+                        hasInterruptPattern: /(esc to interrupt)/i.test(filteredContent)
+                    }
+                },
+                stats: {
+                    removedChars: originalContent.length - filteredContent.length,
+                    removalPercentage: Math.round((originalContent.length - filteredContent.length) / originalContent.length * 100),
+                    wasFiltered: originalContent.length !== filteredContent.length
+                }
+            };
+
+            // 保存到文件
+            fs.writeFileSync(filepath, JSON.stringify(saveData, null, 2), 'utf8');
+            console.log(`[DEBUG] Response comparison saved to: ${filepath}`);
+
+            // 保存原始内容纯文本版本
+            const originalTextFilename = `feishu-response-original-${timestamp}.txt`;
+            const originalTextFilepath = path.join(saveDir, originalTextFilename);
+            fs.writeFileSync(originalTextFilepath, originalContent, 'utf8');
+            console.log(`[DEBUG] Original text version saved to: ${originalTextFilepath}`);
+
+            // 保存过滤后内容纯文本版本
+            const filteredTextFilename = `feishu-response-filtered-${timestamp}.txt`;
+            const filteredTextFilepath = path.join(saveDir, filteredTextFilename);
+            fs.writeFileSync(filteredTextFilepath, filteredContent, 'utf8');
+            console.log(`[DEBUG] Filtered text version saved to: ${filteredTextFilepath}`);
+
+            // 显示过滤统计
+            if (saveData.stats.wasFiltered) {
+                console.log(`[DEBUG] Content filtering stats: removed ${saveData.stats.removedChars} chars (${saveData.stats.removalPercentage}%)`);
+            }
+
+        } catch (error) {
+            console.error(`[ERROR] Failed to save response to file:`, error.message);
+        }
     }
 
     /**
