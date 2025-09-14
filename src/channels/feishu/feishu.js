@@ -360,6 +360,28 @@ ${claudeSummary || notification.message || '任务已完成'}`;
                                                 name: 'reset_button'
                                             }
                                         ]
+                                    },
+                                    {
+                                        tag: 'column',
+                                        width: 'auto',
+                                        vertical_align: 'top',
+                                        elements: [
+                                            {
+                                                tag: 'button',
+                                                text: {
+                                                    tag: 'plain_text',
+                                                    content: '解释'
+                                                },
+                                                type: 'default',
+                                                action_type: 'form_submit',
+                                                name: 'explain_button',
+                                                value: {
+                                                    cmd: '/cmd',
+                                                    token: token,
+                                                    command: '解释一下刚才做了什么'
+                                                }
+                                            }
+                                        ]
                                     }
                                 ],
                                 margin: '0px'
