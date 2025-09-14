@@ -104,11 +104,18 @@ class FeishuChannel extends NotificationChannel {
                     content: JSON.stringify({ text: textContent }),
                     msg_type: 'text'
                 };
-            } else {
-                // For other message types, content should be a JSON object
+            } else if (message.msg_type === 'interactive') {
+                // For interactive messages, content should be a JSON string of the card
                 requestBody = {
                     receive_id: receiveId,
-                    content: message.content,
+                    content: JSON.stringify(message.card),
+                    msg_type: 'interactive'
+                };
+            } else {
+                // For other message types, content should be a JSON string
+                requestBody = {
+                    receive_id: receiveId,
+                    content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content),
                     msg_type: message.msg_type || 'text'
                 };
             }
@@ -247,81 +254,6 @@ class FeishuChannel extends NotificationChannel {
 ${claudeSummary || notification.message || '任务已完成'}`;
 
         // 创建交互式卡片消息
-        const cardContent = {
-            elements: [
-                {
-                    tag: 'div',
-                    text: {
-                        content: textContent,
-                        tag: 'lark_md'
-                    }
-                },
-                {
-                    tag: 'hr'
-                },
-                {
-                    tag: 'div',
-                    text: {
-                        content: '**快速回复**',
-                        tag: 'lark_md'
-                    }
-                },
-                {
-                    tag: 'action',
-                    actions: [
-                        {
-                            tag: 'button',
-                            text: {
-                                content: '继续',
-                                tag: 'plain_text'
-                            },
-                            type: 'primary',
-                            value: {
-                                cmd: '/cmd',
-                                token: token,
-                                command: '继续'
-                            }
-                        },
-                        {
-                            tag: 'button',
-                            text: {
-                                content: '解释',
-                                tag: 'plain_text'
-                            },
-                            type: 'default',
-                            value: {
-                                cmd: '/cmd',
-                                token: token,
-                                command: '解释一下刚才做了什么'
-                            }
-                        },
-                        {
-                            tag: 'button',
-                            text: {
-                                content: '测试',
-                                tag: 'plain_text'
-                            },
-                            type: 'default',
-                            value: {
-                                cmd: '/cmd',
-                                token: token,
-                                command: 'npm test'
-                            }
-                        }
-                    ]
-                },
-                {
-                    tag: 'note',
-                    elements: [
-                        {
-                            tag: 'plain_text',
-                            content: `会话令牌: ${token}`
-                        }
-                    ]
-                }
-            ]
-        };
-
         return {
             msg_type: 'interactive',
             card: {
@@ -333,7 +265,7 @@ ${claudeSummary || notification.message || '任务已完成'}`;
                         tag: 'div',
                         text: {
                             content: `${emoji} ${title}`,
-                            tag: 'plain_text'
+                            tag: 'lark_md'
                         }
                     },
                     {
@@ -398,26 +330,96 @@ ${claudeSummary || notification.message || '任务已完成'}`;
                             {
                                 tag: 'button',
                                 text: {
-                                    content: '测试',
+                                    content: '状态',
                                     tag: 'plain_text'
                                 },
                                 type: 'default',
                                 value: {
                                     cmd: '/cmd',
                                     token: token,
-                                    command: 'npm test'
+                                    command: 'npm run daemon:status'
                                 }
                             }
                         ]
                     },
                     {
-                        tag: 'note',
+                        tag: 'hr'
+                    },
+                    {
+                        tag: 'div',
+                        text: {
+                            content: '**💡 发送自定义指令**',
+                            tag: 'lark_md'
+                        }
+                    },
+                    {
+                        tag: 'form',
                         elements: [
                             {
-                                tag: 'plain_text',
-                                content: `会话令牌: ${token}`
+                                tag: 'input',
+                                element_id: 'command_input',
+                                margin: '0px 0px 8px 0px',
+                                placeholder: {
+                                    tag: 'plain_text',
+                                    content: '请输入您的指令...'
+                                },
+                                default_value: '',
+                                width: 'default',
+                                label: {
+                                    tag: 'plain_text',
+                                    content: '指令：'
+                                },
+                                name: 'command_input'
+                            },
+                            {
+                                tag: 'column_set',
+                                flex_mode: 'none',
+                                background_style: 'default',
+                                horizontal_spacing: 'default',
+                                columns: [
+                                    {
+                                        tag: 'column',
+                                        width: 'auto',
+                                        vertical_align: 'top',
+                                        elements: [
+                                            {
+                                                tag: 'button',
+                                                text: {
+                                                    tag: 'plain_text',
+                                                    content: '发送指令'
+                                                },
+                                                type: 'primary',
+                                                action_type: 'form_submit',
+                                                name: 'submit_button',
+                                                value: {
+                                                    cmd: '/cmd',
+                                                    token: token
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        tag: 'column',
+                                        width: 'auto',
+                                        vertical_align: 'top',
+                                        elements: [
+                                            {
+                                                tag: 'button',
+                                                text: {
+                                                    tag: 'plain_text',
+                                                    content: '清除'
+                                                },
+                                                type: 'default',
+                                                action_type: 'form_reset',
+                                                name: 'reset_button'
+                                            }
+                                        ]
+                                    }
+                                ],
+                                margin: '0px'
                             }
-                        ]
+                        ],
+                        name: 'command_form'
                     }
                 ]
             }

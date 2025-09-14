@@ -24,7 +24,7 @@ const config = {
     appId: process.env.FEISHU_APP_ID,
     appSecret: process.env.FEISHU_APP_SECRET,
     verificationToken: process.env.FEISHU_VERIFICATION_TOKEN,
-    userId: process.env.FEISHU_USER_ID,
+    userId: process.env.FEISHU_USER_ID || process.env.FEISHU_CHAT_ID,
     groupId: process.env.FEISHU_GROUP_ID,
     whitelist: process.env.FEISHU_WHITELIST ? process.env.FEISHU_WHITELIST.split(',').map(id => id.trim()) : [],
     port: process.env.FEISHU_WEBHOOK_PORT || 3002,
