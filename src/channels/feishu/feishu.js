@@ -295,14 +295,7 @@ ${claudeSummary || notification.message || '任务已完成'}`;
                     {
                         tag: 'hr'
                     },
-                    {
-                        tag: 'div',
-                        text: {
-                            content: '**💡 发送自定义指令**',
-                            tag: 'lark_md'
-                        }
-                    },
-                    {
+                      {
                         tag: 'form',
                         elements: [
                             {
@@ -315,11 +308,7 @@ ${claudeSummary || notification.message || '任务已完成'}`;
                                 },
                                 default_value: '',
                                 width: 'default',
-                                label: {
-                                    tag: 'plain_text',
-                                    content: '指令：'
-                                },
-                                name: 'command_input'
+                                                                name: 'command_input'
                             },
                             {
                                 tag: 'column_set',
