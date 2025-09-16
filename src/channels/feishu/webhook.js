@@ -254,12 +254,10 @@ class FeishuWebhookHandler {
                             req.headers['x-lark-request-timestamp'] ||
                             req.headers['X-Lark-Request-Timestamp'];
             
-            this.logger.debug('Headers received:', {
-                allHeaders: Object.keys(req.headers),
+            // Log minimal header info for debugging
+            this.logger.debug('Feishu webhook headers:', {
                 signature: signature ? 'present' : 'missing',
-                timestamp: timestamp ? 'present' : 'missing',
-                rawSignature: signature,
-                rawTimestamp: timestamp
+                timestamp: timestamp ? 'present' : 'missing'
             });
             
             // For message events, verify signature if verification token is configured
