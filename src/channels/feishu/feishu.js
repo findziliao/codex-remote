@@ -179,35 +179,15 @@ class FeishuChannel extends NotificationChannel {
     }
 
     /**
-     * Extract content from the last ● symbol line to the end
+     * Return complete content without bullet filtering
      * @param {string} response - Full Claude response
-     * @returns {string} Content from last ● symbol line to end
+     * @returns {string} Complete content
      */
     _extractFromLastBullet(response) {
         if (!response) return '';
-        
-        // 按行分割文本
-        const lines = response.split('\n');
-        const bulletLineIndices = [];
-        
-        // 收集所有以●符号开头的行号位置
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (line.startsWith('●')) {
-                bulletLineIndices.push(i);
-            }
-        }
-        
-        if (bulletLineIndices.length === 0) {
-            return response; // 如果没有●符号开头的行，返回完整内容
-        }
-        
-        // 获取最后一个●符号开头的行号
-        const lastBulletLineIndex = bulletLineIndices[bulletLineIndices.length - 1];
-        
-        // 返回从该行开始一直到结尾的所有内容
-        const resultLines = lines.slice(lastBulletLineIndex);
-        return resultLines.join('\n');
+
+        // 直接返回完整内容，不进行项目符号过滤
+        return response;
     }
 
   
@@ -240,7 +220,7 @@ class FeishuChannel extends NotificationChannel {
         if (notification.metadata && notification.metadata.claudeResponse) {
             const response = notification.metadata.claudeResponse;
 
-            // 提取从最后一个●符号开始的内容，如果没有●符号则显示完整内容
+            // 直接显示完整内容，不进行项目符号过滤
             claudeSummary = this._extractFromLastBullet(response);
 
             // 去掉最后五行（通常包含esc to interrupt、分隔线和状态信息）
