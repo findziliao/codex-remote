@@ -22,6 +22,55 @@ Control [Claude Code](https://claude.ai/code) remotely via multiple messaging pl
 
 > 🐦 Follow [@Jiaxi_Cui](https://x.com/Jiaxi_Cui) for updates and AI development insights
 
+## 🆕 首次使用指南（简短）
+
+1) 克隆与安装
+
+```bash
+git clone https://github.com/findziliao/codex-remote.git
+cd codex-remote
+npm install
+```
+
+2) 准备配置
+
+```bash
+cp .env.example .env
+# 编辑 .env，至少配置一种渠道（建议先用 Telegram 或 Desktop）
+```
+
+3) 启动 Claude（tmux 中）
+
+```bash
+tmux new -s claude-session
+# 在 tmux 会话里启动 Claude Code，并确保已启用 hooks
+```
+
+4) 启动服务并自检
+
+```bash
+npm run webhooks              # 启动所有在 .env 中启用的平台
+node claude-remote.js status  # 查看当前配置与渠道状态
+node claude-remote.js test    # 发送渠道连通性测试
+```
+
+5) 发送一次完成通知（验证 Hook/消息链路）
+
+```bash
+node claude-hook-notify.js completed
+```
+
+—— 以上完成后，即可在对应平台收到通知，并可按说明回复指令远程控制 Claude。
+
+## 🛠 命令速查（统一用法）
+
+- 安装依赖: `npm install`
+- 启动所有启用服务: `npm run webhooks`
+- 单个平台: `npm run telegram` | `npm run line` | `npm run feishu`
+- 邮件守护进程: `npm run daemon:start` | 停止 `npm run daemon:stop`
+- 发送测试通知: `node claude-hook-notify.js completed`
+- 诊断/状态/测试: `node claude-remote.js diagnose` | `status` | `test`
+
 ## ✨ Features
 
 - **📧 Multiple Messaging Platforms**: 
